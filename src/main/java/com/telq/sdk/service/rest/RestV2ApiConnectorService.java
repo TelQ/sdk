@@ -57,7 +57,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
     /**
      * Here we get the list of all available networks
-     * @return {@link List<Network>} a list of networks received from the server
+     * @return A list of networks received from the server
      * @throws AuthorizationServiceException If token is aren't valid
      * @throws IOException if request to server fails
      */
@@ -75,7 +75,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
     /**
      * Here we make new tests, sending them in one array
-     * @return {@link List<Test>} Response after test creation
+     * @return List of tests as a response after test creation
      * @throws AuthorizationServiceException If token is aren't valid
      * @throws IOException if request to server fails
      * @param authorizationService
