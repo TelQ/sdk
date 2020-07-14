@@ -4,7 +4,7 @@
 
     <groupId>com.telqele</groupId>
     <artifactId>sdk</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
     <build>
         <plugins>
@@ -146,7 +146,7 @@
         <connection>scm:git:git://github.com/TelQ/sdk.git</connection>
         <developerConnection>scm:git:git@github.com:TelQ/sdk.git</developerConnection>
         <url>https://github.com/TelQ/sdk</url>
-        <tag>HEAD</tag>
+        <tag>sdk-1.0.1</tag>
     </scm>
 
     <properties>
