@@ -2,6 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>
+        sdk
+    </name>
     <description>
         SDK used for accessing to TelQ Telecom platform API
     </description>
@@ -17,6 +20,14 @@
             <organizationUrl>https://github.com/TelQ</organizationUrl>
         </developer>
     </developers>
+    <licenses>
+        <license>
+            <name>sdk license</name>
+            <url>
+                https://github.com/TelQ/sdk/blob/master/LICENSE
+            </url>
+        </license>
+    </licenses>
 
     <groupId>com.telqtele</groupId>
     <artifactId>sdk</artifactId>
@@ -111,43 +122,6 @@
                 </executions>
             </plugin>
 
-            <!-- License information -->
-            <plugin>
-                <groupId>com.mycila.maven-license-plugin</groupId>
-                <artifactId>maven-license-plugin</artifactId>
-                <version>1.10.b1</version>
-                <configuration>
-                    <header>${license.dir}/LICENSE</header>
-                    <properties>
-                        <project>
-                            ${project.name}
-                        </project>
-                        <founder>${project.organization.name}</founder>
-                        <year>${project.inceptionYear}</year>
-                        <website>https://telqtele.com</website>
-                    </properties>
-                    <includes>
-                        <include>src/main/java/**</include>
-                        <include>src/test/java/**</include>
-                    </includes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>format</goal>
-                        </goals>
-                        <phase>process-sources</phase>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.mycila</groupId>
-                        <artifactId>licenses</artifactId>
-                        <version>1</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-
         </plugins>
     </build>
 
@@ -204,7 +178,6 @@
 
     <properties>
         <java.version>8</java.version>
-        <license.dir>${basedir}</license.dir>
     </properties>
 
     <dependencies>
