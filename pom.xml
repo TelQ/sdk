@@ -133,7 +133,7 @@
     <distributionManagement>
         <snapshotRepository>
             <id>com.telqtele</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>com.telqtele</id>
