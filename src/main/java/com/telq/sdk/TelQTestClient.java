@@ -1,5 +1,6 @@
 package com.telq.sdk;
 
+import com.google.gson.Gson;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
@@ -287,7 +288,9 @@ public class TelQTestClient {
         if(resultsCallBackToken != null)
             request.setHeader("results-callback-token", resultsCallBackToken);
 
-        request.setEntity(new StringEntity(JsonMapper.getInstance().getMapper().toJson(requestTestDto)));
+        Gson mapper = JsonMapper.getInstance().getMapper();
+        StringEntity bodyEntity = new StringEntity(mapper.toJson(requestTestDto));
+        request.setEntity(bodyEntity);
 
         return request;
     }

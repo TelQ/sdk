@@ -7,15 +7,21 @@ import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.Result;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
+import com.telq.sdk.utils.JsonMapper;
+import lombok.SneakyThrows;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
@@ -167,6 +173,37 @@ public class TelQTestClientTest extends BaseTest {
 
     }
 
+    @SneakyThrows
+    @Test
+    public void jsonMapperLoadTest_pass() {
+        CyclicBarrier barrier = new CyclicBarrier(700);
+
+        AtomicBoolean nullCaught = new AtomicBoolean(false);
+
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < 700; i++) {
+            threads.add(new Thread(() -> {
+                try {
+                    barrier.await();
+                    if(JsonMapper.getInstance().getMapper() == null) {
+                        throw new NullPointerException("JSON MAPPER NULL");
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (BrokenBarrierException e) {
+                    e.printStackTrace();
+                } catch(NullPointerException nullPointerException) {
+                    nullCaught.set(true);
+                }
+            }));
+        }
+
+        threads.forEach(Thread::start);
+        Thread.sleep(5000);
+        if(nullCaught.get()) {
+            fail();
+        }
+    }
 
 
 

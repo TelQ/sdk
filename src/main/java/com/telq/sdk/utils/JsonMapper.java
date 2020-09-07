@@ -15,7 +15,7 @@ public class JsonMapper {
     private JsonMapper() {
     }
 
-    public static JsonMapper getInstance() {
+    public synchronized static JsonMapper getInstance() {
         if (instance == null) {
             instance = new JsonMapper();
             instance.initialise();
