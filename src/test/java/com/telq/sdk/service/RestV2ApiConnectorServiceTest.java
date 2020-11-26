@@ -3,6 +3,7 @@ package com.telq.sdk.service;
 import com.telq.sdk.BaseTest;
 import com.telq.sdk.exceptions.httpExceptions.clientSide.BadRequest;
 import com.telq.sdk.exceptions.httpExceptions.serverSide.InternalServerError;
+import com.telq.sdk.model.MockResponses;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.model.network.DestinationNetwork;
@@ -135,6 +136,48 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         assertEquals(3, responseNetworks.size());
     }
+
+    @Test
+    public void getNetworks_detailedResponse_pass() throws Exception {
+        HttpGet networksGet = new HttpGet(TelQUrls.getNetworksUrl());
+        when(this.networksResponse.getStatusLine()).thenReturn(statusLine200);
+
+        when(this.networksResponse.getEntity()).thenReturn(
+                EntityBuilder
+                        .create()
+                        .setText(MockResponses.getNetworksResponse).build());
+        when(mockClient.execute(networksGet)).thenReturn(networksResponse);
+
+        List<Network> responseNetworks = connectorService.getNetworks(authorizationService, networksGet);
+
+        assertEquals(3, responseNetworks.size());
+
+        List<Network> expectedResponse = new ArrayList<>();
+        expectedResponse.add(Network.builder()
+                .mcc("289")
+                .mnc("88")
+                .providerName("A-Mobile")
+                .countryName("Abkhazia")
+                .portedFromMnc("99")
+                .build());
+        expectedResponse.add(Network.builder()
+                .mcc("289")
+                .mnc("67")
+                .providerName("Aquafon")
+                .countryName("Abkhazia")
+                .portedFromProviderName("PortedProviderName")
+                .build());
+        expectedResponse.add(Network.builder()
+                .mcc("412")
+                .mnc("01")
+                .providerName("AWCC")
+                .countryName("Afghanistan")
+                .build());
+
+
+        assertEquals(expectedResponse, responseNetworks);
+    }
+
 
     @Test
     public void sendTests_basicParams_pass() throws Exception {
