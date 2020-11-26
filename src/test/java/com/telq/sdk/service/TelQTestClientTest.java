@@ -40,8 +40,8 @@ public class TelQTestClientTest extends BaseTest {
 
     private Field apiConnectorServiceField;
 
-    private List<Network> mockNetworks = Arrays.asList(Network.builder().country("Serbia").provider("Telenor").mcc("111").mnc("222").build(),
-            Network.builder().country("Mexico").provider("MexicoProvider").mcc("333").mnc("444").build());
+    private List<Network> mockNetworks = Arrays.asList(Network.builder().countryName("Serbia").providerName("Telenor").mcc("111").mnc("222").build(),
+            Network.builder().countryName("Mexico").providerName("MexicoProvider").mcc("333").mnc("444").build());
 
     private List<DestinationNetwork> mockDestinations = Arrays.asList(
                 DestinationNetwork.builder().mcc(mockNetworks.get(0).getMcc()).mnc(mockNetworks.get(0).getMnc()).build(),
@@ -100,7 +100,7 @@ public class TelQTestClientTest extends BaseTest {
         List<Network> networks = testClient.getNetworks();
 
         assertEquals(mockNetworks.size(), networks.size());
-        assertEquals(mockNetworks.get(0).getCountry(), networks.get(0).getCountry());
+        assertEquals(mockNetworks.get(0).getCountryName(), networks.get(0).getCountryName());
     }
 
     @Test

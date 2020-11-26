@@ -15,15 +15,15 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Network {
 
-    private String country;
+    private String countryName;
 
-    private String provider;
+    private String providerName;
 
     private String mcc;
 
     private String mnc;
 
-    private String portedFromProvider;
+    private String portedFromProviderName;
 
     private String portedFromMnc;
 
