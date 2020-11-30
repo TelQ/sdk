@@ -51,13 +51,13 @@ public class TelQTestClientTest extends BaseTest {
     private List<com.telq.sdk.model.tests.Test> returnTests = Arrays.asList(
       com.telq.sdk.model.tests.Test.builder()
               .id(1L)
-              .destinationNetworks(mockDestinations.get(0))
+              .destinationNetwork(mockDestinations.get(0))
               .phoneNumber("38112311231")
               .testIdText("testThisIs")
               .build(),
         com.telq.sdk.model.tests.Test.builder()
                 .id(2L)
-                .destinationNetworks(mockDestinations.get(1))
+                .destinationNetwork(mockDestinations.get(1))
                 .phoneNumber("381999999")
                 .testIdText("testThisIs2")
                 .build()

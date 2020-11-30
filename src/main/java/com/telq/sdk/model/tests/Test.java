@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Test {
 
-        private DestinationNetwork destinationNetworks;
+        private DestinationNetwork destinationNetwork;
 
         private String errorMessage;
 
