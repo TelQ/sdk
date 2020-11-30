@@ -1,6 +1,7 @@
 package com.telq.sdk.model.tests;
 
 import com.telq.sdk.model.network.DestinationNetwork;
+import com.telq.sdk.model.network.DestinationNetworkDetails;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,11 +21,11 @@ public class Result {
 
     private Long id;
     private Instant testCreatedAt;
-    private Instant smscReceivedAt;
+    private Instant smsReceivedAt;
     private String testStatus;
     private Integer receiptDelay;
 
-    private DestinationNetwork destinationNetwork;
+    private DestinationNetworkDetails destinationNetworkDetails;
 
     private String senderDelivered;
     private String textDelivered;
