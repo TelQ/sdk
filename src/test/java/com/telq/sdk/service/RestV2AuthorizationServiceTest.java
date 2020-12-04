@@ -11,17 +11,23 @@ import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 
+@ExtendWith(
+        MockitoExtension.class
+)
 public class RestV2AuthorizationServiceTest extends BaseTest {
 
     @Mock
@@ -38,7 +44,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
     @Mock
     private HttpPost tokenPostIncorrect;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         TokenRequestDto tokenRequestDto = TokenRequestDto.builder()
                 .appId(appId)
@@ -53,7 +59,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
     @Test
     public void requestToken_correctCredentials_pass() throws Exception {
         ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
-        when(apiConnectorService.getToken(any())).thenReturn(tokenBearer);
+        Mockito.lenient().when(apiConnectorService.getToken(any())).thenReturn(tokenBearer);
         RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
                 correctApiCredentials,
                 apiConnectorService
@@ -67,7 +73,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
     @Test
     public void requestToken_incorrectCredentials_exceptionThrown() throws Exception {
         ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
-        when(apiConnectorService.getToken(any())).thenThrow(new BadRequest());
+        Mockito.lenient().when(apiConnectorService.getToken(any())).thenThrow(new BadRequest());
         RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
                 correctApiCredentials,
                 apiConnectorService
@@ -83,7 +89,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
     @Test
     public void checkAndGetToken_fetchAgain_pass() throws Exception {
         ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
-        when(apiConnectorService.getToken(any())).thenReturn(tokenBearer);
+        Mockito.lenient().when(apiConnectorService.getToken(any())).thenReturn(tokenBearer);
         RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
                 correctApiCredentials,
                 apiConnectorService
@@ -99,7 +105,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
 
         tokenBearer = TokenBearer.builder().token("TEST_TOKEN").build();
 
-        when(apiConnectorService.getToken(any())).thenReturn(tokenBearer);
+        Mockito.lenient().when(apiConnectorService.getToken(any())).thenReturn(tokenBearer);
 
         TokenBearer modifiedToken = authorizationService.checkAndGetToken();
 

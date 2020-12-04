@@ -24,17 +24,23 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 
+@ExtendWith(
+        MockitoExtension.class
+)
 public class RestV2ApiConnectorServiceTest extends BaseTest {
 
 
@@ -62,15 +68,15 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
     private HttpPost requestPost;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         connectorService = new RestV2ApiConnectorService(mockClient);
 
-        when(statusLine200.getStatusCode()).thenReturn(200);
-        when(statusLine400.getStatusCode()).thenReturn(400);
-        when(statusLine500.getStatusCode()).thenReturn(500);
+        Mockito.lenient().when(statusLine200.getStatusCode()).thenReturn(200);
+        Mockito.lenient().when(statusLine400.getStatusCode()).thenReturn(400);
+        Mockito.lenient().when(statusLine500.getStatusCode()).thenReturn(500);
 
-        when(authorizationService.checkAndGetToken()).thenReturn(TokenBearer.builder().token(token).build());
+        Mockito.lenient().when(authorizationService.checkAndGetToken()).thenReturn(TokenBearer.builder().token(token).build());
     }
 
     @Test
@@ -82,13 +88,13 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         requestPost = new HttpPost(TelQUrls.getTokenUrl());
         requestPost.setEntity(new StringEntity(JsonMapper.getInstance().getMapper().toJson(tokenRequestDto)));
-        when(this.tokenResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.tokenResponse.getStatusLine()).thenReturn(statusLine200);
 
         JSONObject tokenResponse = new JSONObject();
         tokenResponse.put("ttl", ttl);
         tokenResponse.put("value", token);
-        when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(tokenResponse.toString()).build());
-        when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
+        Mockito.lenient().when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(tokenResponse.toString()).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
 
         TokenBearer token = connectorService.getToken(requestPost);
 
@@ -104,13 +110,13 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         requestPost = new HttpPost(TelQUrls.getTokenUrl());
         requestPost.setEntity(new StringEntity(JsonMapper.getInstance().getMapper().toJson(tokenRequestDto)));
-        when(this.tokenResponse.getStatusLine()).thenReturn(statusLine400);
+        Mockito.lenient().when(this.tokenResponse.getStatusLine()).thenReturn(statusLine400);
 
         JSONObject tokenResponse = new JSONObject();
         tokenResponse.put("ttl", ttl);
         tokenResponse.put("value", token);
-        when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(tokenResponse.toString()).build());
-        when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
+        Mockito.lenient().when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(tokenResponse.toString()).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
 
         try {
            connectorService.getToken(requestPost);
@@ -129,10 +135,10 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         requestPost = new HttpPost(TelQUrls.getTokenUrl());
         requestPost.setEntity(new StringEntity(JsonMapper.getInstance().getMapper().toJson(tokenRequestDto)));
-        when(this.tokenResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.tokenResponse.getStatusLine()).thenReturn(statusLine200);
 
-        when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.getTokenValid).build());
-        when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
+        Mockito.lenient().when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.getTokenValid).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
 
         TokenBearer tokenBearer = connectorService.getToken(requestPost);
         assertEquals(MockResponses.token, tokenBearer.getToken());
@@ -148,10 +154,10 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         requestPost = new HttpPost(TelQUrls.getTokenUrl());
         requestPost.setEntity(new StringEntity(JsonMapper.getInstance().getMapper().toJson(tokenRequestDto)));
-        when(this.tokenResponse.getStatusLine()).thenReturn(statusLine400);
+        Mockito.lenient().when(this.tokenResponse.getStatusLine()).thenReturn(statusLine400);
 
-        when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.getTokenInvalid).build());
-        when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
+        Mockito.lenient().when(this.tokenResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.getTokenInvalid).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(this.tokenResponse);
 
         assertThrows(BadRequest.class, () -> connectorService.getToken(requestPost));
     }
@@ -159,18 +165,18 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
     @Test
     public void getNetworks_pass() throws Exception {
         HttpGet networksGet = new HttpGet(TelQUrls.getNetworksUrl());
-        when(this.networksResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.networksResponse.getStatusLine()).thenReturn(statusLine200);
 
         Network[] networks = new Network[3];
         networks[0] = Network.builder().mcc("289").mnc("88").build();
         networks[1] = Network.builder().mcc("289").mnc("87").build();
         networks[2] = Network.builder().mcc("289").mnc("86").build();
 
-        when(this.networksResponse.getEntity()).thenReturn(
+        Mockito.lenient().when(this.networksResponse.getEntity()).thenReturn(
                 EntityBuilder
                         .create()
                         .setText(JsonMapper.getInstance().getMapper().toJson(networks)).build());
-        when(mockClient.execute(networksGet)).thenReturn(networksResponse);
+        Mockito.lenient().when(mockClient.execute(networksGet)).thenReturn(networksResponse);
 
         List<Network> responseNetworks = connectorService.getNetworks(authorizationService, networksGet);
 
@@ -180,13 +186,13 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
     @Test
     public void getNetworks_detailedResponse_pass() throws Exception {
         HttpGet networksGet = new HttpGet(TelQUrls.getNetworksUrl());
-        when(this.networksResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.networksResponse.getStatusLine()).thenReturn(statusLine200);
 
-        when(this.networksResponse.getEntity()).thenReturn(
+        Mockito.lenient().when(this.networksResponse.getEntity()).thenReturn(
                 EntityBuilder
                         .create()
                         .setText(MockResponses.getNetworksResponseDetailedValid).build());
-        when(mockClient.execute(networksGet)).thenReturn(networksResponse);
+        Mockito.lenient().when(mockClient.execute(networksGet)).thenReturn(networksResponse);
 
         List<Network> responseNetworks = connectorService.getNetworks(authorizationService, networksGet);
 
@@ -255,13 +261,13 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
                 .testIdText("nkxofabewq")
                 .build();
 
-        when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine200);
-        when(this.sendTestsResponse.getEntity()).thenReturn(
+        Mockito.lenient().when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.sendTestsResponse.getEntity()).thenReturn(
                 EntityBuilder
                         .create()
                         .setText(JsonMapper.getInstance().getMapper().toJson(tests)).build());
 
-        when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
 
         List<com.telq.sdk.model.tests.Test> testsResponse = connectorService.sendTests(
                 authorizationService,
@@ -282,9 +288,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
                 3600,
                 null);
 
-        when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine200);
-        when(this.sendTestsResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestNewTestValid).build());
-        when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
+        Mockito.lenient().when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.sendTestsResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestNewTestValid).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
 
         List<com.telq.sdk.model.tests.Test> testsResponse = connectorService.sendTests(
                 authorizationService,
@@ -318,9 +324,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
                 3600,
                 null);
 
-        when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine200);
-        when(this.sendTestsResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestNewTestWrongParamsInvalid).build());
-        when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
+        Mockito.lenient().when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.sendTestsResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestNewTestWrongParamsInvalid).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
 
         List<com.telq.sdk.model.tests.Test> testsResponse = connectorService.sendTests(
                 authorizationService,
@@ -348,9 +354,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
                 3600,
                 null);
 
-        when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine400);
-        when(this.sendTestsResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestNewTestMissingParamsInvalid).build());
-        when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
+        Mockito.lenient().when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine400);
+        Mockito.lenient().when(this.sendTestsResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestNewTestMissingParamsInvalid).build());
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
 
         assertThrows(BadRequest.class, () -> connectorService.sendTests(
                 authorizationService,
@@ -390,13 +396,13 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
                 .testIdText("nkxofabewq")
                 .build();
 
-        when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine500);
-        when(this.sendTestsResponse.getEntity()).thenReturn(
+        Mockito.lenient().when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine500);
+        Mockito.lenient().when(this.sendTestsResponse.getEntity()).thenReturn(
                 EntityBuilder
                         .create()
                         .setText(JsonMapper.getInstance().getMapper().toJson(tests)).build());
 
-        when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
 
         try {
             connectorService.sendTests(
@@ -405,9 +411,6 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         } catch (Exception e) {
             assertTrue(e instanceof InternalServerError);
         }
-
-
-
     }
 
     @Test
@@ -441,13 +444,13 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
                 .testIdText("nkxofabewq")
                 .build();
 
-        when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine400);
-        when(this.sendTestsResponse.getEntity()).thenReturn(
+        Mockito.lenient().when(this.sendTestsResponse.getStatusLine()).thenReturn(statusLine400);
+        Mockito.lenient().when(this.sendTestsResponse.getEntity()).thenReturn(
                 EntityBuilder
                         .create()
                         .setText(JsonMapper.getInstance().getMapper().toJson(tests)).build());
 
-        when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
+        Mockito.lenient().when(mockClient.execute(requestPost)).thenReturn(sendTestsResponse);
 
         try {
             connectorService.sendTests(
@@ -462,9 +465,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
     @SneakyThrows
     public void getTestResult_validParams_pass() {
         HttpGet requestGet = new HttpGet(TelQUrls.getResultsUrl() + "/" + MockResponses.requestTestId);
-        when(this.testResultResponse.getStatusLine()).thenReturn(statusLine200);
-        when(this.testResultResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestResultValid).build());
-        when(mockClient.execute(requestGet)).thenReturn(testResultResponse);
+        Mockito.lenient().when(this.testResultResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.testResultResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestResultValid).build());
+        Mockito.lenient().when(mockClient.execute(requestGet)).thenReturn(testResultResponse);
 
         Result result = connectorService.getTestResult(
                 authorizationService,
@@ -493,9 +496,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
     @SneakyThrows
     public void getTestResult_testDeliveredAndDetailed_pass() {
         HttpGet requestGet = new HttpGet(TelQUrls.getResultsUrl() + "/" + MockResponses.requestTestId);
-        when(this.testResultResponse.getStatusLine()).thenReturn(statusLine200);
-        when(this.testResultResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestResultDetailedValid).build());
-        when(mockClient.execute(requestGet)).thenReturn(testResultResponse);
+        Mockito.lenient().when(this.testResultResponse.getStatusLine()).thenReturn(statusLine200);
+        Mockito.lenient().when(this.testResultResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestResultDetailedValid).build());
+        Mockito.lenient().when(mockClient.execute(requestGet)).thenReturn(testResultResponse);
 
         Result result = connectorService.getTestResult(
                 authorizationService,
@@ -530,9 +533,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
     @SneakyThrows
     public void getTestResult_invalidId_badRequest() {
         HttpGet requestGet = new HttpGet(TelQUrls.getResultsUrl() + "/" + MockResponses.requestTestId);
-        when(this.testResultResponse.getStatusLine()).thenReturn(statusLine400);
-        when(this.testResultResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestResultInvalidIdInvalid).build());
-        when(mockClient.execute(requestGet)).thenReturn(testResultResponse);
+        Mockito.lenient().when(this.testResultResponse.getStatusLine()).thenReturn(statusLine400);
+        Mockito.lenient().when(this.testResultResponse.getEntity()).thenReturn(EntityBuilder.create().setText(MockResponses.requestResultInvalidIdInvalid).build());
+        Mockito.lenient().when(mockClient.execute(requestGet)).thenReturn(testResultResponse);
 
         assertThrows(BadRequest.class, () -> connectorService.getTestResult(
                 authorizationService,
