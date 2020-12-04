@@ -49,6 +49,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
         try (CloseableHttpResponse response = httpRequestWrapper(null, request, true)) {
 
             String content = extractResponseContent(response.getEntity());
+            response.close();
             TokenResponseDto tokenResponseDto = JsonMapper.getInstance().getMapper().fromJson(content, TokenResponseDto.class);
 
             return TokenBearer.builder().token(tokenResponseDto.getValue()).build();
@@ -67,6 +68,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             networks = JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Network[].class);
+            response.close();
 
             return Arrays.asList(networks);
         }
@@ -89,6 +91,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             testResponse = JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Test[].class);
+            response.close();
 
             return Arrays.asList(testResponse);
         }
@@ -107,7 +110,9 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
     @Override
     public Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request) throws Exception {
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
-            return JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Result.class);
+            String resultResponse = extractResponseContent(response.getEntity());
+            response.close();
+            return JsonMapper.getInstance().getMapper().fromJson(resultResponse, Result.class);
         }
     }
 
