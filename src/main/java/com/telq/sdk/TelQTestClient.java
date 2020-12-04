@@ -15,10 +15,15 @@ import com.telq.sdk.utils.JsonMapper;
 import com.telq.sdk.utils.RequestDataValidator;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
 import lombok.NonNull;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +45,14 @@ public class TelQTestClient {
     private static final int defaultTtl = 3600;
     private static final int defaultMaxCallbackRetries = 3;
 
+    private static final int TOTAL_CONNECTIONS_FOR_CLIENT = 100;
+
 
     private TelQTestClient(String appKey, String appId) {
-        this.apiConnectorService = new RestV2ApiConnectorService(HttpClients.createDefault());
+        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
+        connManager.setMaxTotal(TOTAL_CONNECTIONS_FOR_CLIENT);
+
+        this.apiConnectorService = new RestV2ApiConnectorService(HttpClients.custom().setConnectionManager(connManager).build());
 
         authorizationService = new RestV2AuthorizationService(
                 ApiCredentials.builder()
@@ -54,11 +64,13 @@ public class TelQTestClient {
     }
 
     /**
-     * Here we will initialise the client for use. For the first call, appKey and id is required
+     * Here we will initialise the client for use. For the first call, appKey and id is required.
+     * The update method is {@link #getClient(String, String)}
      * @param appKey used for authentication
      * @param appId used for authentication
      * @return Instance of {@link TelQTestClient}
      */
+    @Deprecated
     public static TelQTestClient getInstance(String appKey, String appId) throws Exception {
         if (instance == null) {
             instance = new TelQTestClient(appKey, appId);
@@ -66,7 +78,28 @@ public class TelQTestClient {
         return instance;
     }
 
+    /**
+     * Here we will initialise the client for use. For the first call, appKey and id is required
+     * @param appKey used for authentication
+     * @param appId used for authentication
+     * @return Instance of {@link TelQTestClient}
+     */
+    public static TelQTestClient getClient(String appKey, String appId) throws Exception {
+        if (instance == null) {
+            instance = new TelQTestClient(appKey, appId);
+        }
+        return instance;
+    }
+
+    @Deprecated
     public static TelQTestClient getInstance() throws Exception {
+        if (instance == null) {
+            throw new Exception("Please initialise with app_key and app_id first.");
+        }
+        return instance;
+    }
+
+    public static TelQTestClient getClient() throws Exception {
         if (instance == null) {
             throw new Exception("Please initialise with app_key and app_id first.");
         }
