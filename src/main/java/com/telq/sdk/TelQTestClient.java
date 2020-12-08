@@ -19,6 +19,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +41,19 @@ public class TelQTestClient {
     private static final int defaultTtl = 3600;
     private static final int defaultMaxCallbackRetries = 3;
 
+    /**
+     * This is the default number of connections to be at disposal for the HttpClient.
+     * When the HttpClient makes requests on default, it has one connection that has to be assigned
+     * to each method every invocation. Increasing the number allows us to make requests simultaneously.
+     */
+    private static final int DEFAULT_TOTAL_CONNECTIONS_FOR_CLIENT = 100;
 
-    private TelQTestClient(String appKey, String appId) {
-        this.apiConnectorService = new RestV2ApiConnectorService(HttpClients.createDefault());
+
+    private TelQTestClient(String appKey, String appId, int totalConnectionsForClient) {
+        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
+        connManager.setMaxTotal(totalConnectionsForClient);
+
+        this.apiConnectorService = new RestV2ApiConnectorService(HttpClients.custom().setConnectionManager(connManager).build());
 
         authorizationService = new RestV2AuthorizationService(
                 ApiCredentials.builder()
@@ -61,7 +72,21 @@ public class TelQTestClient {
      */
     public static TelQTestClient getInstance(String appKey, String appId) throws Exception {
         if (instance == null) {
-            instance = new TelQTestClient(appKey, appId);
+            instance = new TelQTestClient(appKey, appId, DEFAULT_TOTAL_CONNECTIONS_FOR_CLIENT);
+        }
+        return instance;
+    }
+
+    /**
+     * Here we will initialise the client for use. For the first call, appKey and id is required
+     * @param appKey used for authentication
+     * @param appId used for authentication
+     * @param totalConnectionsForClient is the number of connections to be at disposal for the http client. Default value is 100
+     * @return Instance of {@link TelQTestClient}
+     */
+    public static TelQTestClient getInstance(String appKey, String appId, int totalConnectionsForClient) throws Exception {
+        if (instance == null) {
+            instance = new TelQTestClient(appKey, appId, totalConnectionsForClient);
         }
         return instance;
     }

@@ -9,10 +9,13 @@ import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
 import lombok.SneakyThrows;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -23,9 +26,15 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(
+        MockitoExtension.class
+)
 public class TelQTestClientTest extends BaseTest {
 
     @Mock
@@ -63,20 +72,20 @@ public class TelQTestClientTest extends BaseTest {
                 .build()
     );
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         testClient = TelQTestClient.getInstance(appKey, appId);
 
         //GetNetworks
-        when(apiConnectorService.getNetworks(any(), any())).thenReturn(mockNetworks);
+        Mockito.lenient().when(apiConnectorService.getNetworks(any(), any())).thenReturn(mockNetworks);
 
         //InitiateTests
-        when(apiConnectorService.sendTests(
+        Mockito.lenient().when(apiConnectorService.sendTests(
                 eq(authorizationService),
                 any()))
                 .thenReturn(returnTests);
 
-        when(apiConnectorService.getTestResult(eq(authorizationService), any())).thenReturn(Result.builder().id(1L).build());
+        Mockito.lenient().when(apiConnectorService.getTestResult(eq(authorizationService), any())).thenReturn(Result.builder().id(1L).build());
 
         authorizationServiceField = TelQTestClient.class.getDeclaredField("authorizationService");
         authorizationServiceField.setAccessible(true);
@@ -88,7 +97,7 @@ public class TelQTestClientTest extends BaseTest {
 
     }
 
-    @After
+    @AfterEach
     public void restore() {
         authorizationServiceField.setAccessible(false);
         apiConnectorServiceField.setAccessible(false);
