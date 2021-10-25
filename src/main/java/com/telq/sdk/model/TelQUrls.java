@@ -10,7 +10,7 @@ import lombok.Setter;
 public class TelQUrls {
 
     @Getter
-    private static String baseUrl = "https://api.telqtele.com/v2/client";
+    private static String baseUrl = "https://api.telqtele.com/v2.1/client";
 
     @Getter
     private static String tokenUrl = baseUrl + "/token";
