@@ -5,6 +5,9 @@ import com.telq.sdk.TelQTestClient;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.Result;
+import com.telq.sdk.model.tests.TestIdTextCase;
+import com.telq.sdk.model.tests.TestIdTextOptions;
+import com.telq.sdk.model.tests.TestIdTextType;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
@@ -123,6 +126,21 @@ public class TelQTestClientTest extends BaseTest {
     }
 
     @Test
+    public void initiateNewTests_onlyNetworks_plusTestIdTextOptions_pass() throws Exception {
+        List<Network> networks = testClient.getNetworks();
+
+        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(networks,
+                TestIdTextOptions.builder()
+                        .testIdTextType(TestIdTextType.ALPHA_NUMERIC)
+                        .testIdTextCase(TestIdTextCase.MIXED)
+                        .testIdTextLength(6)
+                        .build());
+
+        assertEquals(returnTests.size(), tests.size());
+        assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+    }
+
+    @Test
     public void initiateNewTests_invalidNetworks_pass() throws Exception {
         List<Network> networks = testClient.getNetworks();
         networks.get(0).setMcc("");
@@ -160,6 +178,22 @@ public class TelQTestClientTest extends BaseTest {
         List<Network> networks = testClient.getNetworks();
 
         List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(networks, 3, "callbackurl", "callbacktoken", 5, TimeUnit.SECONDS);
+
+        assertEquals(returnTests.size(), tests.size());
+        assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+    }
+
+    @Test
+    public void initiateNewTests_allParamsPresent_plusTestIdTextOptions_pass() throws Exception {
+        List<Network> networks = testClient.getNetworks();
+
+        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(networks, 3, "callbackurl",
+                "callbacktoken", 5, TimeUnit.SECONDS,
+                TestIdTextOptions.builder()
+                        .testIdTextType(TestIdTextType.ALPHA_NUMERIC)
+                        .testIdTextCase(TestIdTextCase.MIXED)
+                        .testIdTextLength(6)
+                        .build());
 
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());

@@ -26,4 +26,10 @@ public class Test {
 
         private String testIdText;
 
+        private TestIdTextType testIdTextType;
+
+        private TestIdTextCase testIdTextCase;
+
+        private Integer testIdTextLength;
+
 }

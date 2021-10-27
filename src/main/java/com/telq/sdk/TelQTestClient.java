@@ -8,6 +8,7 @@ import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.RequestTestDto;
 import com.telq.sdk.model.tests.Result;
 import com.telq.sdk.model.tests.Test;
+import com.telq.sdk.model.tests.TestIdTextOptions;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
@@ -125,8 +126,33 @@ public class TelQTestClient {
                         -1,
                         null,
                         defaultTtl,
-                        null)
+                        null,
+                        TestIdTextOptions.builder().build())
                 );
+    }
+
+    /**
+     * Make tests with only forwarding networks as a parameter, others are set to default.
+     * @param networks list of networks to run tests on.
+     * @param testIdTextOptions The configuration for the dynamic testIdText feature. Defines the type, case and length of the testIdText.
+     * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
+     * @throws Exception
+     */
+    public List<Test> initiateNewTests(@NonNull List<Network> networks, @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
+        List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
+        if(!RequestDataValidator.validateNetworks(destinationNetworks))
+            throw new Exception("Incorrect data passed in networks.");
+
+        return apiConnectorService.sendTests(
+                authorizationService,
+                formTestInitiationRequest(
+                        destinationNetworks,
+                        -1,
+                        null,
+                        defaultTtl,
+                        null,
+                        testIdTextOptions)
+        );
     }
 
     /**
@@ -149,7 +175,8 @@ public class TelQTestClient {
                         -1,
                         null,
                         ttl,
-                        null)
+                        null,
+                        TestIdTextOptions.builder().build())
                 );
     }
 
@@ -181,7 +208,42 @@ public class TelQTestClient {
                         maxCallbackRetries,
                         callbackUrl,
                         ttl,
-                        callbackToken));
+                        callbackToken,
+                        TestIdTextOptions.builder().build()));
+    }
+
+    /**
+     *  Makes tests with networks, max callback retries, callback url, callback token and ttl.
+     * @param networks list of networks to run tests on.
+     * @param maxCallbackRetries number of maximum tries for callbacks
+     * @param callbackUrl url for callback
+     * @param callbackToken token for authorization of callbacks
+     * @param ttl time to live
+     * @param timeUnit unit in what the ttl is being sent
+     * @param testIdTextOptions The configuration for the dynamic testIdText feature. Defines the type, case and length of the testIdText.
+     * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
+     * @throws Exception
+     */
+    public List<Test> initiateNewTests(@NonNull List<Network> networks,
+                                       @NonNull int maxCallbackRetries,
+                                       @NonNull String callbackUrl,
+                                       @NonNull String callbackToken,
+                                       @NonNull int ttl, @NonNull TimeUnit timeUnit,
+                                       @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
+        List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
+        if(!RequestDataValidator.validateNetworks(destinationNetworks))
+            throw new Exception("Incorrect data passed in networks.");
+
+        ttl = convertTtlValue(ttl, timeUnit);
+        return apiConnectorService.sendTests(
+                authorizationService,
+                formTestInitiationRequest(
+                        destinationNetworks,
+                        maxCallbackRetries,
+                        callbackUrl,
+                        ttl,
+                        callbackToken,
+                        testIdTextOptions));
     }
 
     /**
@@ -208,7 +270,8 @@ public class TelQTestClient {
                         maxCallbackRetries,
                         callbackUrl,
                         defaultTtl,
-                        callbackToken
+                        callbackToken,
+                        TestIdTextOptions.builder().build()
                 ));
     }
 
@@ -234,7 +297,7 @@ public class TelQTestClient {
                         defaultMaxCallbackRetries,
                         callbackUrl,
                         defaultTtl,
-                        callbackToken));
+                        callbackToken, TestIdTextOptions.builder().build()));
     }
 
     /**
@@ -294,10 +357,13 @@ public class TelQTestClient {
     private HttpPost formTestInitiationRequest(@NonNull List<DestinationNetwork> destinationNetworks,
                                                int maxCallbackRetries,
                                                String resultsCallbackUrl,
-                                               int testTimeToLiveInSeconds, String resultsCallBackToken) throws Exception {
+                                               int testTimeToLiveInSeconds, String resultsCallBackToken, TestIdTextOptions testIdTextOptions) throws Exception {
 
         RequestTestDto requestTestDto = RequestTestDto.builder()
                 .destinationNetworks(destinationNetworks)
+                .testIdTextType(testIdTextOptions.getTestIdTextType())
+                .testIdTextCase(testIdTextOptions.getTestIdTextCase())
+                .testIdTextLength(testIdTextOptions.getTestIdTextLength())
                 .build();
 
         if(maxCallbackRetries >= 0)

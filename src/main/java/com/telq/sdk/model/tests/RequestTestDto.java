@@ -22,4 +22,10 @@ public class RequestTestDto {
 
     private int testTimeToLiveInSeconds;
 
+    private TestIdTextType testIdTextType;
+
+    private TestIdTextCase testIdTextCase;
+
+    private Integer testIdTextLength;
+
 }
