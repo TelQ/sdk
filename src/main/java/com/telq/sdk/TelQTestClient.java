@@ -5,10 +5,7 @@ import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
-import com.telq.sdk.model.tests.RequestTestDto;
-import com.telq.sdk.model.tests.Result;
-import com.telq.sdk.model.tests.Test;
-import com.telq.sdk.model.tests.TestIdTextOptions;
+import com.telq.sdk.model.tests.*;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
@@ -138,7 +135,8 @@ public class TelQTestClient {
      * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
      * @throws Exception
      */
-    public List<Test> initiateNewTests(@NonNull List<Network> networks, @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
+    public List<Test> initiateNewTests(@NonNull List<Network> networks,
+                                       @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -163,7 +161,8 @@ public class TelQTestClient {
      * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
      * @throws Exception
      */
-    public List<Test> initiateNewTests(@NonNull List<Network> networks, @NonNull int ttl, @NonNull TimeUnit timeUnit) throws Exception {
+    public List<Test> initiateNewTests(@NonNull List<Network> networks,
+                                       @NonNull int ttl, @NonNull TimeUnit timeUnit) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -225,11 +224,11 @@ public class TelQTestClient {
      * @throws Exception
      */
     public List<Test> initiateNewTests(@NonNull List<Network> networks,
-                                       @NonNull int maxCallbackRetries,
-                                       @NonNull String callbackUrl,
-                                       @NonNull String callbackToken,
-                                       @NonNull int ttl, @NonNull TimeUnit timeUnit,
-                                       @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
+                                       int maxCallbackRetries,
+                                       String callbackUrl,
+                                       String callbackToken,
+                                       int ttl, TimeUnit timeUnit,
+                                       TestIdTextOptions testIdTextOptions) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -246,58 +245,21 @@ public class TelQTestClient {
                         testIdTextOptions));
     }
 
-    /**
-     * Makes tests with networks, max callback retries, callback url, callback token. Takes default ttl
-     * @param networks list of networks to run tests on.
-     * @param maxCallbackRetries number of maximum tries for callbacks
-     * @param callbackUrl url for callback
-     * @param callbackToken token for authorization of callbacks
-     * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
-     * @throws Exception
-     */
-    public List<Test> initiateNewTests(@NonNull List<Network> networks,
-                                       @NonNull int maxCallbackRetries,
-                                       @NonNull String callbackUrl,
-                                       @NonNull String callbackToken) throws Exception {
-        List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
+    public List<Test> initiateNewTests(TestRequest testRequest) throws Exception {
+        List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(testRequest.getNetworks());
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
 
+        testRequest.setTestTimeToLive(convertTtlValue(testRequest.getTestTimeToLive(), testRequest.getTimeUnit()));
         return apiConnectorService.sendTests(
                 authorizationService,
                 formTestInitiationRequest(
                         destinationNetworks,
-                        maxCallbackRetries,
-                        callbackUrl,
-                        defaultTtl,
-                        callbackToken,
-                        TestIdTextOptions.builder().build()
-                ));
-    }
-
-    /**
-     * Makes tests with networks, callback url, callback token. Takes default ttl and max callback rertries
-     * @param networks list of networks to run tests on.
-     * @param callbackUrl url for callback
-     * @param callbackToken token for authorization of callbacks
-     * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
-     * @throws Exception
-     */
-    public List<Test> initiateNewTests(@NonNull List<Network> networks,
-                                       @NonNull String callbackUrl,
-                                       @NonNull String callbackToken) throws Exception {
-        List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
-        if(!RequestDataValidator.validateNetworks(destinationNetworks))
-            throw new Exception("Incorrect data passed in networks.");
-
-        return apiConnectorService.sendTests(
-                authorizationService,
-                formTestInitiationRequest(
-                        destinationNetworks,
-                        defaultMaxCallbackRetries,
-                        callbackUrl,
-                        defaultTtl,
-                        callbackToken, TestIdTextOptions.builder().build()));
+                        testRequest.getMaxCallBackRetries(),
+                        testRequest.getResultsCallbackUrl(),
+                        testRequest.getTestTimeToLive(),
+                        testRequest.getCallBackToken(),
+                        testRequest.getTestIdTextOptions()));
     }
 
     /**

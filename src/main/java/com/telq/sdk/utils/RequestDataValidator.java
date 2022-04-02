@@ -1,12 +1,13 @@
 package com.telq.sdk.utils;
 
 import com.telq.sdk.model.network.DestinationNetwork;
+import lombok.NonNull;
 
 import java.util.List;
 
 public class RequestDataValidator {
 
-    public static boolean validateNetworks(List<DestinationNetwork> networks) {
+    public static boolean validateNetworks(@NonNull List<DestinationNetwork> networks) {
 
         for(DestinationNetwork network: networks) {
             if (isNetworkPropertyInvalid(network.getMcc()) || isNetworkPropertyInvalid(network.getMnc())) {
