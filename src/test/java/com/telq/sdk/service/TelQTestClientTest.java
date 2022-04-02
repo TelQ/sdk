@@ -4,13 +4,11 @@ import com.telq.sdk.BaseTest;
 import com.telq.sdk.TelQTestClient;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
-import com.telq.sdk.model.tests.Result;
-import com.telq.sdk.model.tests.TestIdTextCase;
-import com.telq.sdk.model.tests.TestIdTextOptions;
-import com.telq.sdk.model.tests.TestIdTextType;
+import com.telq.sdk.model.tests.*;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
+import com.telq.sdk.utils.RequestDataValidator;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -194,6 +192,29 @@ public class TelQTestClientTest extends BaseTest {
                         .testIdTextCase(TestIdTextCase.MIXED)
                         .testIdTextLength(6)
                         .build());
+
+        assertEquals(returnTests.size(), tests.size());
+        assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+    }
+
+    @Test
+    public void initiateNewTests_TestRequestObject_pass() throws Exception {
+        TestRequest testRequest = TestRequest.builder()
+                .networks(testClient.getNetworks())
+                .maxCallBackRetries(3)
+                .resultsCallbackUrl("callbackurl")
+                .callBackToken("callbacktoken")
+                .testTimeToLive(5)
+                .timeUnit(TimeUnit.SECONDS)
+                .testIdTextOptions(
+                        TestIdTextOptions.builder()
+                        .testIdTextType(TestIdTextType.ALPHA_NUMERIC)
+                        .testIdTextCase(TestIdTextCase.MIXED)
+                        .testIdTextLength(6)
+                        .build())
+                .build();
+
+        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
 
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());

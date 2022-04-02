@@ -15,15 +15,15 @@ import java.util.concurrent.TimeUnit;
 @NoArgsConstructor
 @Builder
 public class TestRequest {
-    List<Network> networks = new ArrayList<>(); // mandatory, can't be null
+    private List<Network> networks = new ArrayList<>(); // mandatory, can't be null
     @Builder.Default
-    int maxCallBackRetries = 3; // optional, default 3
-    String resultsCallbackUrl; // optional, default null
-    String callBackToken; // optional, default null
+    private int maxCallBackRetries = 3; // optional, default 3
+    private String resultsCallbackUrl; // optional, default null
+    private String callBackToken; // optional, default null
     @Builder.Default
-    int testTimeToLive = 3600; // optional, default 3600
+    private int testTimeToLive = 3600; // optional, default 3600
     @Builder.Default
-    TimeUnit timeUnit = TimeUnit.SECONDS; // optional, default TimeUnit.SECONDS
+    private TimeUnit timeUnit = TimeUnit.SECONDS; // optional, default TimeUnit.SECONDS
     @Builder.Default
-    TestIdTextOptions testIdTextOptions = TestIdTextOptions.builder().build(); // optional
+    private TestIdTextOptions testIdTextOptions = TestIdTextOptions.builder().build(); // optional
 }
