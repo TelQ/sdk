@@ -14,6 +14,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +35,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
+// todo try out AssertJ assertions
+
 @ExtendWith(
         MockitoExtension.class
 )
@@ -50,8 +54,10 @@ public class TelQTestClientTest extends BaseTest {
 
     private Field apiConnectorServiceField;
 
-    private List<Network> mockNetworks = Arrays.asList(Network.builder().countryName("Serbia").providerName("Telenor").mcc("111").mnc("222").build(),
-            Network.builder().countryName("Mexico").providerName("MexicoProvider").mcc("333").mnc("444").build());
+    private List<Network> mockNetworks = Arrays.asList(
+            Network.builder().countryName("Serbia").providerName("Telenor").mcc("111").mnc("222").build(),
+            Network.builder().countryName("Mexico").providerName("MexicoProvider").mcc("333").mnc("444").build()
+    );
 
     private List<DestinationNetwork> mockDestinations = Arrays.asList(
                 DestinationNetwork.builder().mcc(mockNetworks.get(0).getMcc()).mnc(mockNetworks.get(0).getMnc()).build(),
@@ -59,18 +65,18 @@ public class TelQTestClientTest extends BaseTest {
     );
 
     private List<com.telq.sdk.model.tests.Test> returnTests = Arrays.asList(
-      com.telq.sdk.model.tests.Test.builder()
-              .id(1L)
-              .destinationNetwork(mockDestinations.get(0))
-              .phoneNumber("38112311231")
-              .testIdText("testThisIs")
-              .build(),
-        com.telq.sdk.model.tests.Test.builder()
-                .id(2L)
-                .destinationNetwork(mockDestinations.get(1))
-                .phoneNumber("381999999")
-                .testIdText("testThisIs2")
-                .build()
+            com.telq.sdk.model.tests.Test.builder()
+                    .id(1L)
+                    .destinationNetwork(mockDestinations.get(0))
+                    .phoneNumber("38112311231")
+                    .testIdText("testThisIs")
+                    .build(),
+            com.telq.sdk.model.tests.Test.builder()
+                    .id(2L)
+                    .destinationNetwork(mockDestinations.get(1))
+                    .phoneNumber("381999999")
+                    .testIdText("testThisIs2")
+                    .build()
     );
 
     @BeforeEach
@@ -198,7 +204,7 @@ public class TelQTestClientTest extends BaseTest {
     }
 
     @Test
-    public void initiateNewTests_TestRequestObject_pass() throws Exception {
+    public void initiateNewTests_TestRequestObject_allParamsPresent_pass() throws Exception {
         TestRequest testRequest = TestRequest.builder()
                 .networks(testClient.getNetworks())
                 .maxCallBackRetries(3)
@@ -218,6 +224,33 @@ public class TelQTestClientTest extends BaseTest {
 
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+    }
+
+    @Test
+    public void initiateNewTests_TestRequestObject_onlyNetworks_pass() throws Exception {
+        TestRequest testRequest = TestRequest.builder()
+                .networks(testClient.getNetworks())
+                .build();
+
+        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+
+        assertEquals(returnTests.size(), tests.size());
+        assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+    }
+
+    @Test
+    public void initiateNewTests_TestRequestObject_invalidNetworks_pass() throws Exception {
+        List<Network> networks = testClient.getNetworks();
+        networks.get(0).setMcc("");
+        TestRequest testRequest = TestRequest.builder()
+                .networks(networks)
+                .build();
+
+        try {
+            List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+        } catch (Exception e) {
+            assertEquals("Incorrect data passed in networks.", e.getMessage());
+        }
     }
 
     @Test
@@ -252,9 +285,7 @@ public class TelQTestClientTest extends BaseTest {
                     if(JsonMapper.getInstance().getMapper() == null) {
                         throw new NullPointerException("JSON MAPPER NULL");
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (BrokenBarrierException e) {
+                } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
                 } catch(NullPointerException nullPointerException) {
                     nullCaught.set(true);
