@@ -14,7 +14,7 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
-          server-id: ossrh
+          server-id: com.telqtele
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
       - id: install-gpg-key
