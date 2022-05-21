@@ -156,7 +156,7 @@
         <connection>scm:git:git://github.com/TelQ/sdk.git</connection>
         <developerConnection>scm:git:git@github.com:TelQ/sdk.git</developerConnection>
         <url>https://github.com/TelQ/sdk</url>
-        <tag>1.2.1</tag>
+        <tag>sdk-1.2.1</tag>
     </scm>
 
     <properties>
