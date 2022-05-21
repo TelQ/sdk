@@ -24,7 +24,7 @@
 
     <groupId>com.telqtele</groupId>
     <artifactId>sdk</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <build>
@@ -61,7 +61,7 @@
                     <pushChanges>false</pushChanges>
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
-                    <tagNameFormat>@{project.version}</tagNameFormat>
+                    <tagNameFormat>sdk-@{project.version}</tagNameFormat>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -156,7 +156,7 @@
         <connection>scm:git:git://github.com/TelQ/sdk.git</connection>
         <developerConnection>scm:git:git@github.com:TelQ/sdk.git</developerConnection>
         <url>https://github.com/TelQ/sdk</url>
-        <tag>1.2.1</tag>
+        <tag>sdk-1.2.1</tag>
     </scm>
 
     <properties>
