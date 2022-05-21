@@ -1,9 +1,15 @@
 name: Publish SDK to the Maven Central Repository
 on:
-  push:
-    branches:
-      - 'master'
-      - 'add-release-pipeline'
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Default version to use when preparing a release."
+        required: true
+        default: "X.Y.Z"
+      developmentVersion:
+        description: "Default version to use for new local working copy."
+        required: true
+        default: "X.Y.Z-SNAPSHOT"
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -35,4 +41,13 @@ jobs:
             --no-transfer-progress \
             --batch-mode \
             -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
+            -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
+            -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} \
             clean package release:prepare release:perform
+      - uses: actions-ecosystem/action-push-tag@v1
+        name: Push tags
+        with:
+          tag: sdk-${{ github.event.inputs.releaseVersion }}
+          message: 'Release ${{ github.event.inputs.releaseVersion }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
