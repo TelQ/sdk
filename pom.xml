@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <name>
-        sdk
-    </name>
-    <description>
-        SDK used for accessing to TelQ Telecom platform API
-    </description>
-    <url>
-        https://github.com/TelQ/sdk
-    </url>
+    <name>sdk</name>
+    <description>SDK used for accessing to TelQ Telecom platform API</description>
+    <url>https://github.com/TelQ/sdk</url>
     <developers>
         <developer>
             <name>Victor Toral</name>
@@ -31,8 +24,9 @@
 
     <groupId>com.telqtele</groupId>
     <artifactId>sdk</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2-SNAPSHOT</version>
     <packaging>jar</packaging>
+
     <build>
         <plugins>
             <plugin>
@@ -58,7 +52,6 @@
                 </executions>
             </plugin>
 
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
@@ -68,6 +61,7 @@
                     <pushChanges>false</pushChanges>
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
+                    <tagNameFormat>sdk-@{project.version}</tagNameFormat>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -85,7 +79,7 @@
                 <version>1.6.7</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <serverId>com.telqtele</serverId>
+                    <serverId>ossrh</serverId>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
@@ -122,48 +116,37 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 
-
-    <profiles>
-        <!-- GPG Signature on release -->
-        <profile>
-            <id>release-sign-artifacts</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <distributionManagement>
         <snapshotRepository>
-            <id>com.telqtele</id>
+            <id>ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
         <repository>
-            <id>com.telqtele</id>
+            <id>ossrh</id>
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/
             </url>
         </repository>
@@ -173,7 +156,7 @@
         <connection>scm:git:git://github.com/TelQ/sdk.git</connection>
         <developerConnection>scm:git:git@github.com:TelQ/sdk.git</developerConnection>
         <url>https://github.com/TelQ/sdk</url>
-        <tag>sdk-1.2.0</tag>
+        <tag>sdk-1.2.1</tag>
     </scm>
 
     <properties>
@@ -185,7 +168,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5.11</version>
+            <version>4.5.13</version>
         </dependency>
 
         <dependency>
@@ -230,6 +213,5 @@
         </dependency>
 
     </dependencies>
-
 
 </project>
