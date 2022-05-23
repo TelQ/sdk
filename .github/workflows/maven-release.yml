@@ -44,10 +44,9 @@ jobs:
             -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
             -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} \
             clean package release:prepare release:perform
-      - uses: actions-ecosystem/action-push-tag@v1
-        name: Push tags
-        with:
-          tag: sdk-${{ github.event.inputs.releaseVersion }}
-          message: 'Release ${{ github.event.inputs.releaseVersion }}'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push tags
+        run: |
+          tag="sdk-${{ github.event.inputs.releaseVersion }}"
+          messages="Release ${{ github.event.inputs.releaseVersion }}"
+          git tag -a "${tag}" -m "${message}"
+          git push origin "${tag}"
