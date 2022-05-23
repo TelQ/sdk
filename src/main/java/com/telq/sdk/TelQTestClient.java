@@ -1,24 +1,18 @@
 package com.telq.sdk;
 
-import com.google.gson.Gson;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
-import com.telq.sdk.model.tests.RequestTestDto;
-import com.telq.sdk.model.tests.Result;
-import com.telq.sdk.model.tests.Test;
-import com.telq.sdk.model.tests.TestIdTextOptions;
+import com.telq.sdk.model.tests.*;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
-import com.telq.sdk.utils.JsonMapper;
 import com.telq.sdk.utils.RequestDataValidator;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
 import lombok.NonNull;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
@@ -39,8 +33,12 @@ public class TelQTestClient {
     /*
     Default params
      */
-    private static final int defaultTtl = 3600;
-    private static final int defaultMaxCallbackRetries = 3;
+    public static final int DEFAULT_MAX_CALLBACK_RETRIES = 3;
+    public static final String DEFAULT_CALLBACK_URL = null;
+    public static final String DEFAULT_CALLBACK_TOKEN = null;
+    public static final int DEFAULT_TTL = 3600;
+    public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
+    public static final TestIdTextOptions DEFAULT_TEST_ID_TEXT_OPTIONS = TestIdTextOptions.builder().build();
 
     /**
      * This is the default number of connections to be at disposal for the HttpClient.
@@ -109,6 +107,31 @@ public class TelQTestClient {
     }
 
     /**
+     * Makes tests with parameters passed in the TestRequest object
+     * @param testRequest test request object with any or none of the optional parameters specified
+     * @return List of {@link Test} depending on the number of networks sent this represents the test initiated.
+     * @throws Exception
+     */
+    public List<Test> initiateNewTests(TestRequest testRequest) throws Exception {
+        List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(testRequest.getNetworks());
+        if(!RequestDataValidator.validateNetworks(destinationNetworks))
+            throw new Exception("Incorrect data passed in networks.");
+
+        testRequest.setTestTimeToLive(convertTtlValue(testRequest.getTestTimeToLive(), testRequest.getTimeUnit()));
+
+        HttpPost httpPost = apiConnectorService.buildHttpPostRequest(
+                destinationNetworks,
+                testRequest.getMaxCallbackRetries(),
+                testRequest.getCallbackUrl(),
+                testRequest.getTestTimeToLive(),
+                testRequest.getCallbackToken(),
+                testRequest.getTestIdTextOptions());
+
+        return apiConnectorService.sendTests(
+                authorizationService, httpPost);
+    }
+
+    /**
      * Make tests with only forwarding networks as a parameter, others are set to default.
      * @param networks list of networks to run tests on.
      * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
@@ -121,13 +144,13 @@ public class TelQTestClient {
 
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(
+                apiConnectorService.buildHttpPostRequest(
                         destinationNetworks,
-                        -1,
-                        null,
-                        defaultTtl,
-                        null,
-                        TestIdTextOptions.builder().build())
+                        DEFAULT_MAX_CALLBACK_RETRIES,
+                        DEFAULT_CALLBACK_URL,
+                        DEFAULT_TTL,
+                        DEFAULT_CALLBACK_TOKEN,
+                        DEFAULT_TEST_ID_TEXT_OPTIONS)
                 );
     }
 
@@ -138,19 +161,20 @@ public class TelQTestClient {
      * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
      * @throws Exception
      */
-    public List<Test> initiateNewTests(@NonNull List<Network> networks, @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
+    public List<Test> initiateNewTests(@NonNull List<Network> networks,
+                                       @NonNull TestIdTextOptions testIdTextOptions) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
 
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(
+                apiConnectorService.buildHttpPostRequest(
                         destinationNetworks,
-                        -1,
-                        null,
-                        defaultTtl,
-                        null,
+                        DEFAULT_MAX_CALLBACK_RETRIES,
+                        DEFAULT_CALLBACK_URL,
+                        DEFAULT_TTL,
+                        DEFAULT_CALLBACK_TOKEN,
                         testIdTextOptions)
         );
     }
@@ -163,7 +187,8 @@ public class TelQTestClient {
      * @return List of {@link Test} depending on the number of networks sent this represent the test initiated.
      * @throws Exception
      */
-    public List<Test> initiateNewTests(@NonNull List<Network> networks, @NonNull int ttl, @NonNull TimeUnit timeUnit) throws Exception {
+    public List<Test> initiateNewTests(@NonNull List<Network> networks,
+                                       @NonNull int ttl, @NonNull TimeUnit timeUnit) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(networks);
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -171,12 +196,12 @@ public class TelQTestClient {
         ttl = convertTtlValue(ttl, timeUnit);
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(destinationNetworks,
-                        -1,
-                        null,
+                apiConnectorService.buildHttpPostRequest(destinationNetworks,
+                        DEFAULT_MAX_CALLBACK_RETRIES,
+                        DEFAULT_CALLBACK_URL,
                         ttl,
-                        null,
-                        TestIdTextOptions.builder().build())
+                        DEFAULT_CALLBACK_TOKEN,
+                        DEFAULT_TEST_ID_TEXT_OPTIONS)
                 );
     }
 
@@ -203,13 +228,13 @@ public class TelQTestClient {
         ttl = convertTtlValue(ttl, timeUnit);
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(
+                apiConnectorService.buildHttpPostRequest(
                         destinationNetworks,
                         maxCallbackRetries,
                         callbackUrl,
                         ttl,
                         callbackToken,
-                        TestIdTextOptions.builder().build()));
+                        DEFAULT_TEST_ID_TEXT_OPTIONS));
     }
 
     /**
@@ -237,7 +262,7 @@ public class TelQTestClient {
         ttl = convertTtlValue(ttl, timeUnit);
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(
+                apiConnectorService.buildHttpPostRequest(
                         destinationNetworks,
                         maxCallbackRetries,
                         callbackUrl,
@@ -265,14 +290,13 @@ public class TelQTestClient {
 
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(
+                apiConnectorService.buildHttpPostRequest(
                         destinationNetworks,
                         maxCallbackRetries,
                         callbackUrl,
-                        defaultTtl,
+                        DEFAULT_TTL,
                         callbackToken,
-                        TestIdTextOptions.builder().build()
-                ));
+                        DEFAULT_TEST_ID_TEXT_OPTIONS));
     }
 
     /**
@@ -292,13 +316,15 @@ public class TelQTestClient {
 
         return apiConnectorService.sendTests(
                 authorizationService,
-                formTestInitiationRequest(
+                apiConnectorService.buildHttpPostRequest(
                         destinationNetworks,
-                        defaultMaxCallbackRetries,
+                        DEFAULT_MAX_CALLBACK_RETRIES,
                         callbackUrl,
-                        defaultTtl,
-                        callbackToken, TestIdTextOptions.builder().build()));
+                        DEFAULT_TTL,
+                        callbackToken,
+                        DEFAULT_TEST_ID_TEXT_OPTIONS));
     }
+
 
     /**
      * Query for the test result with the given id
@@ -352,38 +378,6 @@ public class TelQTestClient {
         );
 
         return destinationNetworks;
-    }
-
-    private HttpPost formTestInitiationRequest(@NonNull List<DestinationNetwork> destinationNetworks,
-                                               int maxCallbackRetries,
-                                               String resultsCallbackUrl,
-                                               int testTimeToLiveInSeconds, String resultsCallBackToken, TestIdTextOptions testIdTextOptions) throws Exception {
-
-        RequestTestDto requestTestDto = RequestTestDto.builder()
-                .destinationNetworks(destinationNetworks)
-                .testIdTextType(testIdTextOptions.getTestIdTextType())
-                .testIdTextCase(testIdTextOptions.getTestIdTextCase())
-                .testIdTextLength(testIdTextOptions.getTestIdTextLength())
-                .build();
-
-        if(maxCallbackRetries >= 0)
-            requestTestDto.setMaxCallbackRetries(maxCallbackRetries);
-        if(resultsCallbackUrl != null)
-            requestTestDto.setResultsCallbackUrl(resultsCallbackUrl);
-        if(testTimeToLiveInSeconds >= 0)
-            requestTestDto.setTestTimeToLiveInSeconds(testTimeToLiveInSeconds);
-
-
-        HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
-
-        if(resultsCallBackToken != null)
-            request.setHeader("results-callback-token", resultsCallBackToken);
-
-        Gson mapper = JsonMapper.getInstance().getMapper();
-        StringEntity bodyEntity = new StringEntity(mapper.toJson(requestTestDto));
-        request.setEntity(bodyEntity);
-
-        return request;
     }
 
 }
