@@ -1,29 +1,23 @@
 package com.telq.sdk.model.tests;
 
+import com.telq.sdk.TelQTestClient;
 import com.telq.sdk.model.network.Network;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 public class TestRequest {
-    private List<Network> networks = new ArrayList<>(); // mandatory, can't be null
-    @Builder.Default
-    private int maxCallBackRetries = 3; // optional, default 3
-    private String resultsCallbackUrl; // optional, default null
-    private String callBackToken; // optional, default null
-    @Builder.Default
-    private int testTimeToLive = 3600; // optional, default 3600
-    @Builder.Default
-    private TimeUnit timeUnit = TimeUnit.SECONDS; // optional, default TimeUnit.SECONDS
-    @Builder.Default
-    private TestIdTextOptions testIdTextOptions = TestIdTextOptions.builder().build(); // optional
+    private List<Network> networks;
+    @Builder.Default private int maxCallbackRetries = TelQTestClient.DEFAULT_MAX_CALLBACK_RETRIES;
+    @Builder.Default private String callbackUrl = TelQTestClient.DEFAULT_CALLBACK_URL;
+    @Builder.Default private String callbackToken = TelQTestClient.DEFAULT_CALLBACK_TOKEN;
+    @Builder.Default private int testTimeToLive = TelQTestClient.DEFAULT_TTL;
+    @Builder.Default private TimeUnit timeUnit = TelQTestClient.DEFAULT_TIME_UNIT;
+    @Builder.Default private TestIdTextOptions testIdTextOptions = TelQTestClient.DEFAULT_TEST_ID_TEXT_OPTIONS;
 }

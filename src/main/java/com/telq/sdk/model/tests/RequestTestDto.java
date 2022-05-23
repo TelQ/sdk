@@ -18,7 +18,7 @@ public class RequestTestDto {
 
     private int maxCallbackRetries;
 
-    private String resultsCallbackUrl;
+    private String callbackUrl;
 
     private int testTimeToLiveInSeconds;
 

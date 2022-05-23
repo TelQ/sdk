@@ -8,18 +8,18 @@ import com.telq.sdk.model.tests.*;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
-import com.telq.sdk.utils.RequestDataValidator;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,13 +29,13 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
-// todo try out AssertJ assertions
 
 @ExtendWith(
         MockitoExtension.class
@@ -47,6 +47,14 @@ public class TelQTestClientTest extends BaseTest {
 
     @Mock
     private ApiConnectorService apiConnectorService;
+
+
+    @Captor ArgumentCaptor<List<DestinationNetwork>> networksCaptor;
+    @Captor ArgumentCaptor<Integer> maxCallbackRetriesCaptor;
+    @Captor ArgumentCaptor<String> callbackUrlCaptor;
+    @Captor ArgumentCaptor<Integer> testTimeToLiveCaptor;
+    @Captor ArgumentCaptor<String> callbackTokenCaptor;
+    @Captor ArgumentCaptor<TestIdTextOptions> testIdTextOptionsCaptor;
 
     private TelQTestClient testClient;
 
@@ -92,7 +100,10 @@ public class TelQTestClientTest extends BaseTest {
                 any()))
                 .thenReturn(returnTests);
 
-        Mockito.lenient().when(apiConnectorService.getTestResult(eq(authorizationService), any())).thenReturn(Result.builder().id(1L).build());
+        Mockito.lenient().when(apiConnectorService.getTestResult(
+                eq(authorizationService),
+                any()))
+                .thenReturn(Result.builder().id(1L).build());
 
         authorizationServiceField = TelQTestClient.class.getDeclaredField("authorizationService");
         authorizationServiceField.setAccessible(true);
@@ -205,11 +216,12 @@ public class TelQTestClientTest extends BaseTest {
 
     @Test
     public void initiateNewTests_TestRequestObject_allParamsPresent_pass() throws Exception {
+        // given
         TestRequest testRequest = TestRequest.builder()
                 .networks(testClient.getNetworks())
-                .maxCallBackRetries(3)
-                .resultsCallbackUrl("callbackurl")
-                .callBackToken("callbacktoken")
+                .maxCallbackRetries(3)
+                .callbackUrl("callbackurl")
+                .callbackToken("callbacktoken")
                 .testTimeToLive(5)
                 .timeUnit(TimeUnit.SECONDS)
                 .testIdTextOptions(
@@ -220,11 +232,16 @@ public class TelQTestClientTest extends BaseTest {
                         .build())
                 .build();
 
+        // when
         List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
 
+        // then
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+        assertThatAllParamsAreMappedCorrectly(testRequest);
     }
+
+
 
     @Test
     public void initiateNewTests_TestRequestObject_onlyNetworks_pass() throws Exception {
@@ -236,6 +253,29 @@ public class TelQTestClientTest extends BaseTest {
 
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
+        assertThatAllParamsAreMappedCorrectly(testRequest);
+    }
+
+
+    private void assertThatAllParamsAreMappedCorrectly(TestRequest testRequest) throws UnsupportedEncodingException {
+        verify(apiConnectorService).buildHttpPostRequest(
+                networksCaptor.capture(),
+                maxCallbackRetriesCaptor.capture(),
+                callbackUrlCaptor.capture(),
+                testTimeToLiveCaptor.capture(),
+                callbackTokenCaptor.capture(),
+                testIdTextOptionsCaptor.capture()
+                );
+
+        int capturedMaxCallbackRetries = maxCallbackRetriesCaptor.getValue();
+        String capturedCallbackUrl = callbackUrlCaptor.getValue();
+        int capturedTestTimeToLive = testTimeToLiveCaptor.getValue();
+        String capturedCallbackToken = callbackTokenCaptor.getValue();
+
+        assertThat(capturedMaxCallbackRetries).isEqualTo(testRequest.getMaxCallbackRetries());
+        assertThat(capturedCallbackUrl).isEqualTo(testRequest.getCallbackUrl());
+        assertThat(capturedTestTimeToLive).isEqualTo(testRequest.getTestTimeToLive());
+        assertThat(capturedCallbackToken).isEqualTo(testRequest.getCallbackToken());
     }
 
     @Test

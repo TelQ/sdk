@@ -40,7 +40,7 @@ public class Functional {
         requestNetworks.add(network_2);
 
         int maxCallBackRetries = 1;
-        String resultsCallbackUrl = "https://some-callback-url-abcdadsa22.com/some-path";
+        String callbackUrl = "https://some-callback-url-abcdadsa22.com/some-path";
         int testTimeToLive = 200;
         String callBackToken = "peHWFdAXikjzmMgqPTwhpeHWFdAXikjzmMgqPTwhpeHWFdAXikjzmMgqPTwh";
 
@@ -51,7 +51,7 @@ public class Functional {
                 .build();
 
         timeA = System.currentTimeMillis();
-        List<Test> requestedTests = testClient.initiateNewTests(requestNetworks, maxCallBackRetries, resultsCallbackUrl, callBackToken, testTimeToLive, TimeUnit.SECONDS, testIdTextOptions);
+        List<Test> requestedTests = testClient.initiateNewTests(requestNetworks, maxCallBackRetries, callbackUrl, callBackToken, testTimeToLive, TimeUnit.SECONDS, testIdTextOptions);
 
         System.out.print("\n\n>> Requested Tests - Response in " + (System.currentTimeMillis()-timeA) +" ms <<\n" +  Arrays.toString(requestedTests.toArray()));
 

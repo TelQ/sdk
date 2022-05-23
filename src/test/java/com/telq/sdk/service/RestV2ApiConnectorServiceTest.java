@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(
         MockitoExtension.class
@@ -559,8 +558,8 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
     private HttpPost formTestInitiationRequest(@NonNull List<DestinationNetwork> destinationNetworks,
                                                int maxCallbackRetries,
-                                               String resultsCallbackUrl,
-                                               int testTimeToLiveInSeconds, String resultsCallBackToken) throws Exception {
+                                               String callbackUrl,
+                                               int testTimeToLiveInSeconds, String callBackToken) throws Exception {
 
         RequestTestDto requestTestDto = RequestTestDto.builder()
                 .destinationNetworks(destinationNetworks)
@@ -568,16 +567,16 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         if(maxCallbackRetries >= 0)
             requestTestDto.setMaxCallbackRetries(maxCallbackRetries);
-        if(resultsCallbackUrl != null)
-            requestTestDto.setResultsCallbackUrl(resultsCallbackUrl);
+        if(callbackUrl != null)
+            requestTestDto.setCallbackUrl(callbackUrl);
         if(testTimeToLiveInSeconds >= 0)
             requestTestDto.setTestTimeToLiveInSeconds(testTimeToLiveInSeconds);
 
 
         HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
 
-        if(resultsCallBackToken != null)
-            request.setHeader("results-callback-token", resultsCallBackToken);
+        if(callBackToken != null)
+            request.setHeader("results-callback-token", callBackToken);
 
         request.setEntity(new StringEntity(JsonMapper.getInstance().getMapper().toJson(requestTestDto)));
 
