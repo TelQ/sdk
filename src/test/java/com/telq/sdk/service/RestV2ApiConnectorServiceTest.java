@@ -568,7 +568,7 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         if(maxCallbackRetries >= 0)
             requestTestDto.setMaxCallbackRetries(maxCallbackRetries);
         if(callbackUrl != null)
-            requestTestDto.setCallbackUrl(callbackUrl);
+            requestTestDto.setResultsCallbackUrl(callbackUrl);
         if(testTimeToLiveInSeconds >= 0)
             requestTestDto.setTestTimeToLiveInSeconds(testTimeToLiveInSeconds);
 
