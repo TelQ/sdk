@@ -16,14 +16,13 @@ import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.utils.HttpCodeStatusChecker;
 import com.telq.sdk.utils.JsonMapper;
 import lombok.NonNull;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -46,7 +45,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
      * @throws IOException if request to server fails
      */
     @Override
-    public TokenBearer getToken(HttpRequestBase request)
+    public TokenBearer getToken(HttpUriRequestBase request)
             throws Exception {
 
         try (CloseableHttpResponse response = httpRequestWrapper(null, request, true)) {
@@ -66,7 +65,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
      * @throws IOException if request to server fails
      */
     @Override
-    public List<Network> getNetworks(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request) throws Exception {
+    public List<Network> getNetworks(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception {
         Network[] networks;
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
@@ -87,7 +86,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
      * @param request
      */
     @Override
-    public List<Test> sendTests(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request)
+    public List<Test> sendTests(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request)
             throws Exception {
 
         Test[] testResponse;
@@ -111,7 +110,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
      * @throws Exception in case of authorization of http code failures
      */
     @Override
-    public Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request) throws Exception {
+    public Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception {
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             String resultResponse = extractResponseContent(response.getEntity());
             response.close();
@@ -121,7 +120,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
     private CloseableHttpResponse httpRequestWrapper(
             AuthorizationService authorizationService,
-            HttpRequestBase request,
+            HttpUriRequestBase request,
             boolean requestingToken) throws Exception {
 
         if(request instanceof HttpPost) {
@@ -135,7 +134,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         CloseableHttpResponse response = httpClient.execute(request);
 
-        HttpCodeStatusChecker.statusCheck(response.getStatusLine().getStatusCode());
+        HttpCodeStatusChecker.statusCheck(response.getCode());
 
         return response;
     }

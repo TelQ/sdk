@@ -1,10 +1,6 @@
 package com.telq.sdk;
 
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
-
 public class BaseTest {
 
     protected final String token = "SomeBigLongVeryBigLongHugeOriginalToken";

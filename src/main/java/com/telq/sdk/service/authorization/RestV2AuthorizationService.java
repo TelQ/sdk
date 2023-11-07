@@ -8,8 +8,8 @@ import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.model.token.TokenRequestDto;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.io.IOException;
 import java.time.Instant;
