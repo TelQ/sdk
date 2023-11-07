@@ -11,10 +11,10 @@ import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.RequestDataValidator;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
 import lombok.NonNull;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
 import java.util.ArrayList;
 import java.util.List;

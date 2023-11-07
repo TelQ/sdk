@@ -8,21 +8,21 @@ import com.telq.sdk.model.tests.Test;
 import com.telq.sdk.model.tests.TestIdTextOptions;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import lombok.NonNull;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 public interface ApiConnectorService {
 
-    TokenBearer getToken(@NonNull HttpRequestBase request) throws Exception;
+    TokenBearer getToken(@NonNull HttpUriRequestBase request) throws Exception;
 
-    List<Network> getNetworks(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request) throws Exception;
+    List<Network> getNetworks(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception;
 
-    List<Test> sendTests(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request) throws Exception;
+    List<Test> sendTests(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception;
 
-    Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpRequestBase request) throws Exception;
+    Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception;
 
     HttpPost buildHttpPostRequest(List<DestinationNetwork> destinationNetworks,
                                   int maxCallBackRetries,
