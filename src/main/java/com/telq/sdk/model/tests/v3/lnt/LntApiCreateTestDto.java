@@ -1,10 +1,10 @@
 package com.telq.sdk.model.tests.v3.lnt;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
 public class LntApiCreateTestDto {
 
     private String sender;
