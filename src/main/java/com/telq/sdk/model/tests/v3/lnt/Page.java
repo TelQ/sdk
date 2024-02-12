@@ -7,9 +7,8 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-public class LntApiTestResultPage {
-
-    private List<LntApiTestResultDto> content;
+public class Page<T> {
+    private List<T> content;
     private Integer page;
     private Integer size;
     private String order;
