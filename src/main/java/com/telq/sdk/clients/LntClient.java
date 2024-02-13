@@ -23,18 +23,21 @@ public class LntClient implements LiveNumberTestingClient {
 
     @Override
     public List<LntApiCreateTestResponseDto> createTests(LntApiTestRequestDto testRequestDto) {
-        Type type = new TypeToken<List<LntApiCreateTestResponseDto>>() {}.getType();
-        return restClient.httpPost(lntTestsUrl, testRequestDto,type);
+        Type type = new TypeToken<List<LntApiCreateTestResponseDto>>() {
+        }.getType();
+        return restClient.httpPost(lntTestsUrl, testRequestDto, type);
     }
 
     @Override
     public Page<LntApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to) {
-        Map<String,String> queryParams = new HashMap<>();
-        queryParams.put("from", from.toString());
-        queryParams.put("to", to.toString());
-        queryParams.put("page", pageConf.getPage().toString());
-        queryParams.put("size", pageConf.getSize().toString());
-        queryParams.put("order", String.valueOf(pageConf.getOrder()));
+        Map<String, String> queryParams = new HashMap<>();
+        if (from != null) queryParams.put("from", from.toString());
+        if (to != null) queryParams.put("to", to.toString());
+        if (pageConf != null) {
+            if (pageConf.getPage() != null) queryParams.put("page", pageConf.getPage().toString());
+            if (pageConf.getSize() != null) queryParams.put("size", pageConf.getSize().toString());
+            if (pageConf.getOrder() != null) queryParams.put("order", String.valueOf(pageConf.getOrder()));
+        }
         Type type = new TypeToken<Page<LntApiTestResultDto>>() {}.getType();
         return restClient.httpGet(lntTestsUrl, type, queryParams);
     }
