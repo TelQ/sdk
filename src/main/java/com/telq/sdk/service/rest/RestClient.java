@@ -9,8 +9,10 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.net.URIBuilder;
 
 import java.lang.reflect.Type;
+import java.util.Map;
 
 public class RestClient {
     private final CloseableHttpClient httpClient;
@@ -21,8 +23,14 @@ public class RestClient {
     }
 
     @SneakyThrows
-    public <T> T httpGet(String url, Type responseType) {
-        HttpGet request = new HttpGet(url);
+    public <T> T httpGet(String url, Type responseType, Map<String, String> queryParams) {
+        URIBuilder uriBuilder = new URIBuilder(url);
+        if (queryParams != null) {
+            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                uriBuilder.setParameter(entry.getKey(), entry.getValue());
+            }
+        }
+        HttpGet request = new HttpGet(uriBuilder.build());
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             String json = EntityUtils.toString(response.getEntity());
             return  mapper.fromJson(json, responseType);

@@ -1,6 +1,6 @@
 package com.telq.sdk.clients;
 
-import com.telq.sdk.model.tests.v3.lnt.*;
+import com.telq.sdk.model.v3.lnt.*;
 
 import java.time.Instant;
 import java.util.List;

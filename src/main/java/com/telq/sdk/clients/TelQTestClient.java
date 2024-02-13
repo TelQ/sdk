@@ -5,6 +5,9 @@ import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.*;
+import com.telq.sdk.model.v3.lnt.Page;
+import com.telq.sdk.model.v3.lnt.PageConf;
+import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
@@ -19,6 +22,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -348,6 +352,14 @@ public class TelQTestClient implements ManualTestingClient {
         HttpGet request = new HttpGet(TelQUrls.getResultsUrl() + "/" + testId);
 
         return apiConnectorService.getTestResult(authorizationService, request);
+    }
+
+    /**
+     * Query for the test result page with the given page configuration and time range
+     */
+    @Override
+    public Page<MtApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to) {
+        return null;
     }
 
     /**

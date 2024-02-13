@@ -1,4 +1,4 @@
-package com.telq.sdk.model.tests.v3.lnt;
+package com.telq.sdk.model.v3.lnt;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

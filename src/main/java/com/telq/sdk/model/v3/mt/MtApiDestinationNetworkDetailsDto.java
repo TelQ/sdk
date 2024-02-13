@@ -1,12 +1,11 @@
-package com.telq.sdk.model.tests.v3.lnt;
+package com.telq.sdk.model.v3.mt;
 
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-public class LntApiDestinationDto {
-
+@Builder
+public class MtApiDestinationNetworkDetailsDto {
     private String mcc;
     private String mnc;
     private String portedFromMnc;
@@ -14,5 +13,4 @@ public class LntApiDestinationDto {
     private String providerName;
     private String portedFromProviderName;
     private String phoneNumber;
-    private Boolean manualNumber;
 }

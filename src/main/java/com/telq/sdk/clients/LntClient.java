@@ -1,13 +1,15 @@
 package com.telq.sdk.clients;
 
 import com.google.gson.reflect.TypeToken;
-import com.telq.sdk.model.tests.v3.lnt.*;
+import com.telq.sdk.model.v3.lnt.*;
 import com.telq.sdk.service.rest.RestClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.telq.sdk.model.TelQUrls.lntTestsUrl;
 
@@ -26,13 +28,19 @@ public class LntClient implements LiveNumberTestingClient {
 
     @Override
     public Page<LntApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to) {
+        Map<String,String> queryParams = new HashMap<>();
+        queryParams.put("from", from.toString());
+        queryParams.put("to", to.toString());
+        queryParams.put("page", pageConf.getPage().toString());
+        queryParams.put("size", pageConf.getSize().toString());
+        queryParams.put("order", String.valueOf(pageConf.getOrder()));
         Type type = new TypeToken<Page<LntApiTestResultDto>>() {}.getType();
-        return restClient.httpGet(lntTestsUrl, type);
+        return restClient.httpGet(lntTestsUrl, type, queryParams);
     }
 
     @Override
     public LntApiTestResultDto getTestResultById(String testId) {
-        return restClient.httpGet(lntTestsUrl + "/" + testId, LntApiTestResultDto.class);
+        return restClient.httpGet(lntTestsUrl + "/" + testId, LntApiTestResultDto.class, null);
     }
 
     @Override
