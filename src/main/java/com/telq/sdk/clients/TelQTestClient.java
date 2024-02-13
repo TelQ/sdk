@@ -1,16 +1,19 @@
 package com.telq.sdk.clients;
 
+import com.google.gson.reflect.TypeToken;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.*;
+import com.telq.sdk.model.v3.lnt.LntApiTestResultDto;
 import com.telq.sdk.model.v3.lnt.Page;
 import com.telq.sdk.model.v3.lnt.PageConf;
 import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
+import com.telq.sdk.service.rest.RestClient;
 import com.telq.sdk.utils.RequestDataValidator;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
 import lombok.Getter;
@@ -22,14 +25,21 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static com.telq.sdk.model.TelQUrls.mtTestsUrl;
+
 
 public class TelQTestClient implements ManualTestingClient {
     @Getter
     private static CloseableHttpClient httpClient;
+    private static RestClient restClient;
     private static TelQTestClient instance = null;
 
 
@@ -60,6 +70,7 @@ public class TelQTestClient implements ManualTestingClient {
         connManager.setMaxTotal(totalConnectionsForClient);
 
         httpClient = HttpClients.custom().setConnectionManager(connManager).build();
+
         this.apiConnectorService = new RestV2ApiConnectorService(httpClient);
 
         authorizationService = new RestV2AuthorizationService(
@@ -69,6 +80,7 @@ public class TelQTestClient implements ManualTestingClient {
                     .build(),
                 apiConnectorService
         );
+        restClient = new RestClient(httpClient, authorizationService);
     }
 
     /**
@@ -358,7 +370,16 @@ public class TelQTestClient implements ManualTestingClient {
      */
     @Override
     public Page<MtApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to) {
-        return null;
+        Map<String, String> queryParams = new HashMap<>();
+        if (from != null) queryParams.put("from", from.toString());
+        if (to != null) queryParams.put("to", to.toString());
+        if (pageConf != null) {
+            if (pageConf.getPage() != null) queryParams.put("page", pageConf.getPage().toString());
+            if (pageConf.getSize() != null) queryParams.put("size", pageConf.getSize().toString());
+            if (pageConf.getOrder() != null) queryParams.put("order", String.valueOf(pageConf.getOrder()));
+        }
+        Type type = new TypeToken<Page<MtApiTestResultDto>>() {}.getType();
+        return restClient.httpGet(mtTestsUrl, type, queryParams);
     }
 
     /**
