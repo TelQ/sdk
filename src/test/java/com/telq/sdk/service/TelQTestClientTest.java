@@ -1,7 +1,7 @@
 package com.telq.sdk.service;
 
 import com.telq.sdk.BaseTest;
-import com.telq.sdk.TelQTestClient;
+import com.telq.sdk.clients.TelQTestClient;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.*;

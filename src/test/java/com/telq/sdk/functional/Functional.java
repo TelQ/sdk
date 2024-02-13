@@ -1,6 +1,6 @@
 package com.telq.sdk.functional;
 
-import com.telq.sdk.TelQTestClient;
+import com.telq.sdk.clients.TelQTestClient;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.*;
 

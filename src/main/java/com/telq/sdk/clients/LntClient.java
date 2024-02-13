@@ -1,4 +1,4 @@
-package com.telq.sdk;
+package com.telq.sdk.clients;
 
 import com.google.gson.reflect.TypeToken;
 import com.telq.sdk.model.tests.v3.lnt.*;

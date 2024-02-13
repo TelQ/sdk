@@ -1,4 +1,4 @@
-package com.telq.sdk;
+package com.telq.sdk.clients;
 
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
@@ -10,9 +10,12 @@ import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.RequestDataValidator;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
@@ -20,8 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class TelQTestClient {
-
+public class TelQTestClient implements ManualTestingClient {
+    @Getter
+    private static CloseableHttpClient httpClient;
     private static TelQTestClient instance = null;
 
     /*
@@ -52,7 +56,8 @@ public class TelQTestClient {
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setMaxTotal(totalConnectionsForClient);
 
-        this.apiConnectorService = new RestV2ApiConnectorService(HttpClients.custom().setConnectionManager(connManager).build());
+        httpClient = HttpClients.custom().setConnectionManager(connManager).build();
+        this.apiConnectorService = new RestV2ApiConnectorService(httpClient);
 
         authorizationService = new RestV2AuthorizationService(
                 ApiCredentials.builder()
@@ -60,7 +65,7 @@ public class TelQTestClient {
                     .appKey(appKey)
                     .build(),
                 apiConnectorService
-                );
+        );
     }
 
     /**
@@ -69,7 +74,8 @@ public class TelQTestClient {
      * @param appId used for authentication
      * @return Instance of {@link TelQTestClient}
      */
-    public static TelQTestClient getInstance(String appKey, String appId) throws Exception {
+    @SneakyThrows
+    public static TelQTestClient getInstance(String appKey, String appId)  {
         if (instance == null) {
             instance = new TelQTestClient(appKey, appId, DEFAULT_TOTAL_CONNECTIONS_FOR_CLIENT);
         }
@@ -102,6 +108,7 @@ public class TelQTestClient {
      * @return List of {@link Network} which represent all currently available networks.
      * @throws Exception
      */
+    @Override
     public List<Network> getNetworks() throws Exception {
         return apiConnectorService.getNetworks(authorizationService, new HttpGet(TelQUrls.getNetworksUrl()));
     }
@@ -112,6 +119,7 @@ public class TelQTestClient {
      * @return List of {@link Test} depending on the number of networks sent this represents the test initiated.
      * @throws Exception
      */
+    @Override
     public List<Test> initiateNewTests(TestRequest testRequest) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(testRequest.getNetworks());
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
@@ -332,6 +340,7 @@ public class TelQTestClient {
      * @return {@link Result} of the test
      * @throws Exception
      */
+    @Override
     public Result getTestResult(Long testId) throws Exception {
         if(testId <= 0)
             throw new Exception("Invalid id passed");
