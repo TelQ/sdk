@@ -10,7 +10,8 @@ public class TelqApi {
     public final ManualTestingClient mt;
 
     public TelqApi(String appKey, String appId) {
-        this.mt = TelQTestClient.getInstance(appKey, appId);
-        this.lnt = new LntClient(TelQTestClient.getHttpClient());
+        TelQTestClient mtClient = TelQTestClient.getInstance(appKey, appId);
+        this.mt = mtClient;
+        this.lnt = new LntClient(TelQTestClient.getHttpClient(), mtClient.getAuthorizationService());
     }
 }

@@ -4,10 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LntClientTest {
+class TelqApiTest {
 
     @Test
-    void createTests() {
+    void liveTestingApiCreateTests_() {
+        TelqApi telqApi = new TelqApi("appKey", "appId");
     }
 
     @Test

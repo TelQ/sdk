@@ -1,6 +1,8 @@
 package com.telq.sdk.service.rest;
 
 import com.google.gson.Gson;
+import com.telq.sdk.model.authorization.TokenBearer;
+import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.utils.JsonMapper;
 import lombok.SneakyThrows;
 import org.apache.hc.client5.http.classic.methods.*;
@@ -16,10 +18,12 @@ import java.util.Map;
 
 public class RestClient {
     private final CloseableHttpClient httpClient;
+    private final AuthorizationService authorizationService;
     private final Gson mapper = JsonMapper.getInstance().getMapper();
 
-    public RestClient(CloseableHttpClient httpClient) {
+    public RestClient(CloseableHttpClient httpClient, AuthorizationService authorizationService) {
         this.httpClient = httpClient;
+        this.authorizationService = authorizationService;
     }
 
     @SneakyThrows
@@ -31,6 +35,7 @@ public class RestClient {
             }
         }
         HttpGet request = new HttpGet(uriBuilder.build());
+        useToken(request);
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             String json = EntityUtils.toString(response.getEntity());
             return  mapper.fromJson(json, responseType);
@@ -39,12 +44,14 @@ public class RestClient {
 
     public <T, R> R httpPost(String url, T body, Type responseType) {
         HttpPost request = new HttpPost(url);
+        useToken(request);
         return requestWithBody(body, responseType, request);
     }
 
     @SneakyThrows
     public <T, R> R httpPut(String url, T body,  Type responseType)  {
         HttpPut request = new HttpPut(url);
+        useToken(request);
         return requestWithBody(body, responseType, request);
     }
 
@@ -54,6 +61,7 @@ public class RestClient {
         request.setEntity(new StringEntity(json));
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
+        useToken(request);
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             String responseJson = EntityUtils.toString(response.getEntity());
@@ -62,8 +70,15 @@ public class RestClient {
     }
 
     @SneakyThrows
+    private void useToken(HttpUriRequestBase request){
+        TokenBearer tokenBearer = authorizationService.checkAndGetToken();
+        request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
+    }
+
+    @SneakyThrows
     public void httpDelete(String url) {
         HttpDelete request = new HttpDelete(url);
+        useToken(request);
         try (CloseableHttpResponse response = httpClient.execute(request)) {
         }
     }

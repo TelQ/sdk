@@ -32,9 +32,8 @@ public class TelQTestClient implements ManualTestingClient {
     private static CloseableHttpClient httpClient;
     private static TelQTestClient instance = null;
 
-    /*
-    Services
-     */
+
+    @Getter
     private final AuthorizationService authorizationService;
     private final ApiConnectorService apiConnectorService;
 

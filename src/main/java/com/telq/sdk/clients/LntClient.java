@@ -2,6 +2,7 @@ package com.telq.sdk.clients;
 
 import com.google.gson.reflect.TypeToken;
 import com.telq.sdk.model.v3.lnt.*;
+import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.RestClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
@@ -16,8 +17,8 @@ import static com.telq.sdk.model.TelQUrls.lntTestsUrl;
 public class LntClient implements LiveNumberTestingClient {
     private final RestClient restClient;
 
-    public LntClient(CloseableHttpClient httpClient) {
-        this.restClient = new RestClient(httpClient);
+    public LntClient(CloseableHttpClient httpClient, AuthorizationService authorizationService) {
+        this.restClient = new RestClient(httpClient, authorizationService);
     }
 
     @Override
