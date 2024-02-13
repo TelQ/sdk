@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.List;
 
 public interface LiveNumberTestingClient {
-    List<LntApiCreateTestResponseDto> createTests(LntApiTestRequestDto testRequestDto);
+    LntApiCreateTestResponseDto createTests(LntApiTestRequestDto testRequestDto);
     Page<LntApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to);
     LntApiTestResultDto getTestResultById(String testId);
 

@@ -22,8 +22,8 @@ public class LntClient implements LiveNumberTestingClient {
     }
 
     @Override
-    public List<LntApiCreateTestResponseDto> createTests(LntApiTestRequestDto testRequestDto) {
-        Type type = new TypeToken<List<LntApiCreateTestResponseDto>>() {
+    public LntApiCreateTestResponseDto createTests(LntApiTestRequestDto testRequestDto) {
+        Type type = new TypeToken<LntApiCreateTestResponseDto>() {
         }.getType();
         return restClient.httpPost(lntTestsUrl, testRequestDto, type);
     }

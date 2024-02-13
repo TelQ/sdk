@@ -65,6 +65,7 @@ public class RestClient {
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             String responseJson = EntityUtils.toString(response.getEntity());
+            System.out.println(responseJson);
             return mapper.fromJson(responseJson, responseType);
         }
     }
