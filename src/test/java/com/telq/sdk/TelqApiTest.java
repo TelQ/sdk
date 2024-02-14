@@ -2,10 +2,12 @@ package com.telq.sdk;
 
 import com.telq.sdk.model.v3.lnt.*;
 import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
+@Disabled
 class TelqApiTest {
     String testApiKey = "your-api-key-here";
     String appId = "your-app-id-here";
