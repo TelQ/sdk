@@ -14,9 +14,9 @@ import java.util.List;
 public interface ManualTestingClient {
     List<Network> getNetworks() throws Exception;
 
-    List<Test> initiateNewTests(TestRequest testRequest) throws Exception;
+    List<Test> createTests(TestRequest testRequest) throws Exception;
 
-    Result getTestResult(Long testId) throws Exception;
+    Result getTestById(Long testId) throws Exception;
 
-    Page<MtApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to);
+    Page<MtApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to);
 }

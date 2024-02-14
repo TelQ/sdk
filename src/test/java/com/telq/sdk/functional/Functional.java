@@ -59,7 +59,7 @@ public class Functional {
 
         for(Test test: requestedTests){
            timeA = System.currentTimeMillis();
-            Result result = testClient.getTestResult(test.getId());
+            Result result = testClient.getTestById(test.getId());
             System.out.println(" - Response in " + (System.currentTimeMillis()-timeA) +" ms - " + result);
         }
 

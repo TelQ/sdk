@@ -233,7 +233,7 @@ public class TelQTestClientTest extends BaseTest {
                 .build();
 
         // when
-        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+        List<com.telq.sdk.model.tests.Test> tests = testClient.createTests(testRequest);
 
         // then
         assertEquals(returnTests.size(), tests.size());
@@ -249,7 +249,7 @@ public class TelQTestClientTest extends BaseTest {
                 .networks(testClient.getNetworks())
                 .build();
 
-        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+        List<com.telq.sdk.model.tests.Test> tests = testClient.createTests(testRequest);
 
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
@@ -287,7 +287,7 @@ public class TelQTestClientTest extends BaseTest {
                 .build();
 
         try {
-            List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+            List<com.telq.sdk.model.tests.Test> tests = testClient.createTests(testRequest);
         } catch (Exception e) {
             assertEquals("Incorrect data passed in networks.", e.getMessage());
         }
@@ -295,7 +295,7 @@ public class TelQTestClientTest extends BaseTest {
 
     @Test
     public void getTestResult_validId_pass() throws Exception {
-        Result result = testClient.getTestResult(1L);
+        Result result = testClient.getTestById(1L);
 
         assertEquals(1L, (long) result.getId());
     }
@@ -303,7 +303,7 @@ public class TelQTestClientTest extends BaseTest {
     @Test
     public void getTestResult_invalidId_pass()  {
         try {
-            Result result = testClient.getTestResult(-1L);
+            Result result = testClient.getTestById(-1L);
         } catch (Exception e) {
             assertEquals("Invalid id passed", e.getMessage());
         }

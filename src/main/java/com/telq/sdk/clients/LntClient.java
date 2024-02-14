@@ -29,7 +29,7 @@ public class LntClient implements LiveNumberTestingClient {
     }
 
     @Override
-    public Page<LntApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to) {
+    public Page<LntApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to) {
         Map<String, String> queryParams = new HashMap<>();
         if (from != null) queryParams.put("from", from.toString());
         if (to != null) queryParams.put("to", to.toString());
@@ -43,7 +43,7 @@ public class LntClient implements LiveNumberTestingClient {
     }
 
     @Override
-    public LntApiTestResultDto getTestResultById(String testId) {
+    public LntApiTestResultDto getTestById(Long testId) {
         return restClient.httpGet(lntTestsUrl + "/" + testId, LntApiTestResultDto.class, null);
     }
 
@@ -63,12 +63,12 @@ public class LntClient implements LiveNumberTestingClient {
     }
 
     @Override
-    public LntApiSessionDto getSessionById(String sessionId) {
+    public LntApiSessionDto getSessionById(Long sessionId) {
         return null;
     }
 
     @Override
-    public void deleteSessionById(String sessionId) {
+    public void deleteSessionById(Long sessionId) {
 
     }
 

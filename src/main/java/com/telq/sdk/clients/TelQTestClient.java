@@ -135,7 +135,7 @@ public class TelQTestClient implements ManualTestingClient {
      * @throws Exception
      */
     @Override
-    public List<Test> initiateNewTests(TestRequest testRequest) throws Exception {
+    public List<Test> createTests(TestRequest testRequest) throws Exception {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(testRequest.getNetworks());
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -356,7 +356,7 @@ public class TelQTestClient implements ManualTestingClient {
      * @throws Exception
      */
     @Override
-    public Result getTestResult(Long testId) throws Exception {
+    public Result getTestById(Long testId) throws Exception {
         if(testId <= 0)
             throw new Exception("Invalid id passed");
 
@@ -369,7 +369,7 @@ public class TelQTestClient implements ManualTestingClient {
      * Query for the test result page with the given page configuration and time range
      */
     @Override
-    public Page<MtApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to) {
+    public Page<MtApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to) {
         Map<String, String> queryParams = new HashMap<>();
         if (from != null) queryParams.put("from", from.toString());
         if (to != null) queryParams.put("to", to.toString());

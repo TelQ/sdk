@@ -7,14 +7,14 @@ import java.util.List;
 
 public interface LiveNumberTestingClient {
     LntApiCreateTestResponseDto createTests(LntApiTestRequestDto testRequestDto);
-    Page<LntApiTestResultDto> getTestResults(PageConf pageConf, Instant from, Instant to);
-    LntApiTestResultDto getTestResultById(String testId);
+    Page<LntApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to);
+    LntApiTestResultDto getTestById(Long testId);
 
     LntApiSessionDto createSession(LntApiCreateSessionDto sessionDto);
     LntApiSessionDto updateSession(LntApiCreateSessionDto sessionDto);
     Page<LntApiSessionDto> getSessions(PageConf pageConf);
-    LntApiSessionDto getSessionById(String sessionId);
-    void deleteSessionById(String sessionId);
+    LntApiSessionDto getSessionById(Long sessionId);
+    void deleteSessionById(Long sessionId);
 
     LntApiSupplierDto createSupplier(LntApiCreateSupplierDto supplierDto);
     LntApiSupplierDto updateSupplier(LntApiCreateSupplierDto supplierDto);
