@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
 
 @Data
 @Builder
@@ -16,6 +15,6 @@ public class PageConf {
         ASC, DESC
     }
     Integer page;
-    Instant size;
+    Integer size;
     Order order;
 }
