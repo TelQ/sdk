@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PageConf {
-    enum Order {
+    public enum Order {
         ASC, DESC
     }
     Integer page;
