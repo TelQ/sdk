@@ -124,8 +124,23 @@ public class TelQTestClient implements ManualTestingClient {
      * @throws Exception
      */
     @Override
-    public List<Network> getNetworks() throws Exception {
+    @SneakyThrows
+    public List<Network> getNetworks() {
         return apiConnectorService.getNetworks(authorizationService, new HttpGet(TelQUrls.getNetworksUrl()));
+    }
+
+    @Override
+    @SneakyThrows
+    public List<Network> getNetworks(String mcc, String mnc) {
+        String url = TelQUrls.getNetworksUrl();
+        if (mcc != null && !mcc.isEmpty()) {
+            url += "?mcc=" + mcc;
+        }
+        if (mnc != null && !mnc.isEmpty()) {
+            if (mcc != null && !mcc.isEmpty()) url += "&mnc=" + mnc;
+            else url += "?mnc=" + mnc;
+        }
+        return apiConnectorService.getNetworks(authorizationService, new HttpGet(url));
     }
 
     /**
@@ -135,7 +150,8 @@ public class TelQTestClient implements ManualTestingClient {
      * @throws Exception
      */
     @Override
-    public List<Test> createTests(TestRequest testRequest) throws Exception {
+    @SneakyThrows
+    public List<Test> createTests(TestRequest testRequest) {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(testRequest.getNetworks());
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -353,15 +369,13 @@ public class TelQTestClient implements ManualTestingClient {
      * Query for the test result with the given id
      * @param testId with which the query is done.
      * @return {@link Result} of the test
-     * @throws Exception
      */
     @Override
-    public Result getTestById(Long testId) throws Exception {
+    @SneakyThrows
+    public Result getTestById(Long testId)  {
         if(testId <= 0)
             throw new Exception("Invalid id passed");
-
         HttpGet request = new HttpGet(TelQUrls.getResultsUrl() + "/" + testId);
-
         return apiConnectorService.getTestResult(authorizationService, request);
     }
 

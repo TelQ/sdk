@@ -12,11 +12,13 @@ import java.time.Instant;
 import java.util.List;
 
 public interface ManualTestingClient {
-    List<Network> getNetworks() throws Exception;
+    List<Network> getNetworks();
 
-    List<Test> createTests(TestRequest testRequest) throws Exception;
+    List<Network> getNetworks(String mcc, String mnc);
 
-    Result getTestById(Long testId) throws Exception;
+    List<Test> createTests(TestRequest testRequest);
+
+    Result getTestById(Long testId);
 
     Page<MtApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to);
 }
