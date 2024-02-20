@@ -136,6 +136,12 @@ public class TelQTestClient implements ManualTestingClient {
     @Override
     @SneakyThrows
     public List<Network> getNetworks(String mcc, String mnc) {
+        return getNetworks(mcc, mnc, null);
+    }
+
+    @Override
+    @SneakyThrows
+    public List<Network> getNetworks(String mcc, String mnc, String portedFromMnc) {
         String url = TelQUrls.getNetworksUrl();
         if (mcc != null && !mcc.isEmpty()) {
             url += "?mcc=" + mcc;
@@ -143,6 +149,10 @@ public class TelQTestClient implements ManualTestingClient {
         if (mnc != null && !mnc.isEmpty()) {
             if (mcc != null && !mcc.isEmpty()) url += "&mnc=" + mnc;
             else url += "?mnc=" + mnc;
+        }
+        if (portedFromMnc != null && !portedFromMnc.isEmpty()) {
+            if (mcc != null && !mcc.isEmpty() || mnc != null && !mnc.isEmpty()) url += "&portedFromMnc=" + portedFromMnc;
+            else url += "?portedFromMnc=" + portedFromMnc;
         }
         return apiConnectorService.getNetworks(authorizationService, new HttpGet(url));
     }

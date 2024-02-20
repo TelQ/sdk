@@ -15,6 +15,7 @@ public interface ManualTestingClient {
     List<Network> getNetworks();
 
     List<Network> getNetworks(String mcc, String mnc);
+    List<Network> getNetworks(String mcc, String mnc, String portedFromMnc);
 
     List<Test> createTests(TestRequest testRequest);
 
