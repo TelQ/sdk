@@ -3,6 +3,7 @@ package com.telq.sdk.functional;
 import com.telq.sdk.clients.TelQTestClient;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.*;
+import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,7 +60,7 @@ public class Functional {
 
         for(Test test: requestedTests){
            timeA = System.currentTimeMillis();
-            Result result = testClient.getTestById(test.getId());
+            MtApiTestResultDto result = testClient.getTestById(test.getId());
             System.out.println(" - Response in " + (System.currentTimeMillis()-timeA) +" ms - " + result);
         }
 

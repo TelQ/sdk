@@ -5,17 +5,21 @@ import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
-import com.telq.sdk.model.tests.*;
-import com.telq.sdk.model.v3.lnt.LntApiTestResultDto;
+import com.telq.sdk.model.tests.Result;
+import com.telq.sdk.model.tests.Test;
+import com.telq.sdk.model.tests.TestIdTextOptions;
+import com.telq.sdk.model.tests.TestRequest;
 import com.telq.sdk.model.v3.lnt.Page;
 import com.telq.sdk.model.v3.lnt.PageConf;
+import com.telq.sdk.model.v3.mt.MtApiDestinationNetworkDetailsDto;
+import com.telq.sdk.model.v3.mt.MtApiSmscInfoDto;
 import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.service.rest.RestClient;
-import com.telq.sdk.utils.RequestDataValidator;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
+import com.telq.sdk.utils.RequestDataValidator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -372,11 +376,50 @@ public class TelQTestClient implements ManualTestingClient {
      */
     @Override
     @SneakyThrows
-    public Result getTestById(Long testId)  {
-        if(testId <= 0)
-            throw new Exception("Invalid id passed");
+    public MtApiTestResultDto getTestById(Long testId)  {
+        if (testId <= 0) throw new Exception("Invalid id passed");
         HttpGet request = new HttpGet(TelQUrls.getResultsUrl() + "/" + testId);
-        return apiConnectorService.getTestResult(authorizationService, request);
+        Result testResult = apiConnectorService.getTestResult(authorizationService, request);
+        return mapDto(testResult);
+    }
+
+    private static MtApiTestResultDto mapDto(Result testResult) {
+        MtApiDestinationNetworkDetailsDto destinationNetworkDetails = null;
+        if (testResult.getDestinationNetworkDetails() != null) {
+            destinationNetworkDetails = MtApiDestinationNetworkDetailsDto.builder()
+                    .mcc(testResult.getDestinationNetworkDetails().getMcc())
+                    .mnc(testResult.getDestinationNetworkDetails().getMnc())
+                    .portedFromMnc(testResult.getDestinationNetworkDetails().getPortedFromMnc())
+                    .countryName(testResult.getDestinationNetworkDetails().getCountryName())
+                    .portedFromProviderName(testResult.getDestinationNetworkDetails().getPortedFromProviderName())
+                    .providerName(testResult.getDestinationNetworkDetails().getProviderName())
+                    .build();
+        }
+        MtApiSmscInfoDto smscInfo = null;
+        if (testResult.getSmscInfo() != null) {
+            smscInfo = MtApiSmscInfoDto.builder()
+                    .providerName(testResult.getSmscInfo().getProviderName())
+                    .countryCode(testResult.getSmscInfo().getCountryCode())
+                    .countryName(testResult.getSmscInfo().getCountryName())
+                    .mcc(testResult.getSmscInfo().getMcc())
+                    .mnc(testResult.getSmscInfo().getMnc())
+                    .smscNumber(testResult.getSmscInfo().getSmscNumber())
+                    .smscNumber(testResult.getSmscInfo().getSmscNumber())
+                    .build();
+        }
+        return MtApiTestResultDto.builder()
+                .id(testResult.getId())
+                .testIdText(testResult.getTestIdText())
+                .senderDelivered(testResult.getSenderDelivered())
+                .textDelivered(testResult.getTextDelivered())
+                .testCreatedAt(testResult.getTestCreatedAt())
+                .smsReceivedAt(testResult.getSmsReceivedAt())
+                .receiptDelay(testResult.getReceiptDelay())
+                .receiptStatus(testResult.getTestStatus())
+                .destinationNetworkDetails(destinationNetworkDetails)
+                .smscInfo(smscInfo)
+                .pdusDelivered(testResult.getPdusDelivered())
+                .build();
     }
 
     /**

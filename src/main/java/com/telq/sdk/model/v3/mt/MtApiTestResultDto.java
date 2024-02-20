@@ -1,5 +1,7 @@
 package com.telq.sdk.model.v3.mt;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,6 +10,8 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class MtApiTestResultDto {
 
     private Long id;

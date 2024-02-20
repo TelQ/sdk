@@ -18,7 +18,7 @@ public interface ManualTestingClient {
 
     List<Test> createTests(TestRequest testRequest);
 
-    Result getTestById(Long testId);
+    MtApiTestResultDto getTestById(Long testId);
 
     Page<MtApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to);
 }
