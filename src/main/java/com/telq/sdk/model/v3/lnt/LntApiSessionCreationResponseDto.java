@@ -6,21 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class LntApiCreateSessionDto {
+public class LntApiSessionCreationResponseDto {
     private Long smppSessionId;
     private String hostIp;
     private Integer hostPort;
     private String systemId;
-    private String password;
     private String systemType;
-    private Integer throughput;
-    private Byte destinationTon;
-    private Byte destinationNpi;
     private Boolean enabled;
-    private Integer windowSize;
-    private Boolean useSSL;
-    private Long windowWaitTimeout;
 }

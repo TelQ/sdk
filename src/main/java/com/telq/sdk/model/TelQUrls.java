@@ -28,4 +28,6 @@ public class TelQUrls {
     public static final String baseUrlLnt = baseUrlV3 + "/lnt";
     public static final String lntTestsUrl = baseUrlLnt + "/tests";
     public static final String mtTestsUrl = baseUrlV3 + "/tests";
+    public static final String lntSessionsUrl = baseUrlV3 + "/sessions";
+    public static final String lntSuppliersUrl = baseUrlV3 + "/suppliers";
 }

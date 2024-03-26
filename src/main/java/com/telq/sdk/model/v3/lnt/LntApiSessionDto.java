@@ -1,12 +1,15 @@
 package com.telq.sdk.model.v3.lnt;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LntApiSessionDto {
-
     private Long smppSessionId;
     private String hostIp;
     private Integer hostPort;
@@ -23,4 +26,5 @@ public class LntApiSessionDto {
     private Boolean useSSL;
     private Long windowWaitTimeout;
     private Integer supplierCount;
+    private String userName;
 }
