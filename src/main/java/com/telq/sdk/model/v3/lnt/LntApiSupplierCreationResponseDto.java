@@ -8,18 +8,15 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class LntApiSupplierDto {
+public class LntApiSupplierCreationResponseDto {
     private Long supplierId;
+    private Long smppSessionId;
     private String supplierName;
     private String routeType;
     private List<RouteAttribute> attributeList;
     private String comment;
     private String serviceType;
-    private List<LntApiTlvDto> tlvs;
-    private List<LntApiUdhDto> udhs;
-    private Long smppSessionId;
-    private Long userId;
 }
