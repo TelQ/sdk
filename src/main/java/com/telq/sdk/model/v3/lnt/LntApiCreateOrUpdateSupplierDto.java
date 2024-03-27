@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LntApiCreateSupplierDto {
+public class LntApiCreateOrUpdateSupplierDto {
     private Long supplierId;
     private String supplierName;
     private String routeType;

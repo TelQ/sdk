@@ -3,8 +3,8 @@ package com.telq.sdk;
 import com.telq.sdk.model.tests.TestIdTextCase;
 import com.telq.sdk.model.tests.TestIdTextType;
 import com.telq.sdk.model.v3.lnt.LntApiAssignSuppliersDto;
-import com.telq.sdk.model.v3.lnt.LntApiCreateSessionDto;
-import com.telq.sdk.model.v3.lnt.LntApiCreateSupplierDto;
+import com.telq.sdk.model.v3.lnt.LntApiCreateOrUpdateSessionDto;
+import com.telq.sdk.model.v3.lnt.LntApiCreateOrUpdateSupplierDto;
 import com.telq.sdk.model.v3.lnt.LntApiCreateTestDto;
 import com.telq.sdk.model.v3.lnt.LntApiCreateTestResponseDto;
 import com.telq.sdk.model.v3.lnt.LntApiSessionCreationResponseDto;
@@ -112,7 +112,7 @@ class TelqApiTest {
         System.out.println(suppliers);
 
         // Create session
-        LntApiCreateSessionDto sessionDto = LntApiCreateSessionDto.builder()
+        LntApiCreateOrUpdateSessionDto sessionDto = LntApiCreateOrUpdateSessionDto.builder()
                 .destinationNpi((byte) 0x01)
                 .destinationTon((byte) 0x00)
                 .hostIp("testing.test")
@@ -142,7 +142,7 @@ class TelqApiTest {
 
 
         // Create supplier
-        LntApiCreateSupplierDto supplierDto = LntApiCreateSupplierDto.builder()
+        LntApiCreateOrUpdateSupplierDto supplierDto = LntApiCreateOrUpdateSupplierDto.builder()
                 .supplierName("supplierName")
                 .attributeList(Arrays.asList(RouteAttribute.DLR, RouteAttribute.SPAM))
                 .comment("comment 111")
@@ -169,7 +169,7 @@ class TelqApiTest {
 
         // Create another session and reassign the supplier
         // Create session
-        LntApiCreateSessionDto sessionDtoNew = LntApiCreateSessionDto.builder()
+        LntApiCreateOrUpdateSessionDto sessionDtoNew = LntApiCreateOrUpdateSessionDto.builder()
                 .destinationNpi((byte) 0x01)
                 .destinationTon((byte) 0x00)
                 .hostIp("testing.test")

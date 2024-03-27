@@ -2,8 +2,8 @@ package com.telq.sdk.clients;
 
 import com.google.gson.reflect.TypeToken;
 import com.telq.sdk.model.v3.lnt.LntApiAssignSuppliersDto;
-import com.telq.sdk.model.v3.lnt.LntApiCreateSessionDto;
-import com.telq.sdk.model.v3.lnt.LntApiCreateSupplierDto;
+import com.telq.sdk.model.v3.lnt.LntApiCreateOrUpdateSessionDto;
+import com.telq.sdk.model.v3.lnt.LntApiCreateOrUpdateSupplierDto;
 import com.telq.sdk.model.v3.lnt.LntApiCreateTestResponseDto;
 import com.telq.sdk.model.v3.lnt.LntApiSessionCreationResponseDto;
 import com.telq.sdk.model.v3.lnt.LntApiSessionDto;
@@ -63,14 +63,14 @@ public class LntClient implements LiveNumberTestingClient {
     }
 
     @Override
-    public LntApiSessionCreationResponseDto createSession(LntApiCreateSessionDto sessionDto) {
+    public LntApiSessionCreationResponseDto createSession(LntApiCreateOrUpdateSessionDto sessionDto) {
         if (sessionDto.getSmppSessionId() != null)
             throw new IllegalArgumentException("smppSessionId has to be absent for sessions creation");
         return restClient.httpPost(lntSessionsUrl, sessionDto, LntApiSessionCreationResponseDto.class);
     }
 
     @Override
-    public void updateSession(LntApiCreateSessionDto sessionDto) {
+    public void updateSession(LntApiCreateOrUpdateSessionDto sessionDto) {
         if (sessionDto.getSmppSessionId() == null)
             throw new IllegalArgumentException("smppSessionId has to be specified for sessions update");
         restClient.httpPutNoResponse(lntSessionsUrl, sessionDto);
@@ -103,14 +103,14 @@ public class LntClient implements LiveNumberTestingClient {
     }
 
     @Override
-    public LntApiSupplierCreationResponseDto createSupplier(LntApiCreateSupplierDto supplierDto) {
+    public LntApiSupplierCreationResponseDto createSupplier(LntApiCreateOrUpdateSupplierDto supplierDto) {
         if (supplierDto.getSmppSessionId() == null)
             throw new IllegalArgumentException("smpp session id has to be specified for supplier");
         return restClient.httpPost(lntSuppliersUrl, supplierDto, LntApiSupplierCreationResponseDto.class);
     }
 
     @Override
-    public void updateSupplier(LntApiCreateSupplierDto supplierDto) {
+    public void updateSupplier(LntApiCreateOrUpdateSupplierDto supplierDto) {
         restClient.httpPutNoResponse(lntSuppliersUrl, supplierDto);
     }
 

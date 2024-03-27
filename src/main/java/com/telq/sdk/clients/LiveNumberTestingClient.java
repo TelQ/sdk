@@ -9,14 +9,14 @@ public interface LiveNumberTestingClient {
     Page<LntApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to);
     LntApiTestResultDto getTestById(Long testId);
 
-    LntApiSessionCreationResponseDto createSession(LntApiCreateSessionDto sessionDto);
-    void updateSession(LntApiCreateSessionDto sessionDto);
+    LntApiSessionCreationResponseDto createSession(LntApiCreateOrUpdateSessionDto sessionDto);
+    void updateSession(LntApiCreateOrUpdateSessionDto sessionDto);
     Page<LntApiSessionDto> getSessions(PageConf pageConf);
     LntApiSessionDto getSessionById(Long sessionId);
     void deleteSessionById(Long sessionId);
 
-    LntApiSupplierCreationResponseDto createSupplier(LntApiCreateSupplierDto supplierDto);
-    void updateSupplier(LntApiCreateSupplierDto supplierDto);
+    LntApiSupplierCreationResponseDto createSupplier(LntApiCreateOrUpdateSupplierDto supplierDto);
+    void updateSupplier(LntApiCreateOrUpdateSupplierDto supplierDto);
     Page<LntApiSupplierDto> getSuppliers(PageConf pageConf);
     LntApiSupplierDto getSupplierById(Long supplierId);
     void deleteSupplierById(Long supplierId);

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LntApiCreateSessionDto {
+public class LntApiCreateOrUpdateSessionDto {
     private Long smppSessionId;
     private String hostIp;
     private Integer hostPort;
