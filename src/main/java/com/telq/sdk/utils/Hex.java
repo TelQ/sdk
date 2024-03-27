@@ -1,7 +1,7 @@
 package com.telq.sdk.utils;
 
 /**
- * Util class to convert HEX -> byte, byte -> HEX.
+ * Util class allowing to convert HEX to Byte, and Byte to HEX.
  */
 public final class Hex {
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
