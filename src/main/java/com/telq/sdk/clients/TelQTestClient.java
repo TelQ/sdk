@@ -125,7 +125,6 @@ public class TelQTestClient implements ManualTestingClient {
     /**
      * Returns the list of all currently available networks.
      * @return List of {@link Network} which represent all currently available networks.
-     * @throws Exception
      */
     @Override
     @SneakyThrows
@@ -161,7 +160,6 @@ public class TelQTestClient implements ManualTestingClient {
      * Makes tests with parameters passed in the TestRequest object
      * @param testRequest test request object with any or none of the optional parameters specified
      * @return List of {@link Test} depending on the number of networks sent this represents the test initiated.
-     * @throws Exception
      */
     @Override
     @SneakyThrows
