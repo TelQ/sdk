@@ -10,7 +10,7 @@ public final class Hex {
     }
 
     /**
-     * Converts HEX string -> byte array.
+     * Converts HEX string to byte array.
      */
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
@@ -23,7 +23,7 @@ public final class Hex {
     }
 
     /**
-     * Converts byte array -> HEX string.
+     * Converts byte array to HEX string.
      */
     public static byte[] hexToBytes(String hex) {
         int len = hex.length();
