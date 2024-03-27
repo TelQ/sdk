@@ -24,4 +24,10 @@ public class TelQUrls {
     @Getter
     private static String resultsUrl = baseUrl + "/results";
 
+    public static final String baseUrlV3 = "https://api.telqtele.com/v3/client";
+    public static final String baseUrlLnt = baseUrlV3 + "/lnt";
+    public static final String lntTestsUrl = baseUrlLnt + "/tests";
+    public static final String mtTestsUrl = baseUrlV3 + "/tests";
+    public static final String lntSessionsUrl = baseUrlV3 + "/sessions";
+    public static final String lntSuppliersUrl = baseUrlV3 + "/suppliers";
 }

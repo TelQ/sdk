@@ -1,6 +1,6 @@
 package com.telq.sdk.model.tests;
 
-import com.telq.sdk.TelQTestClient;
+import com.telq.sdk.clients.TelQTestClient;
 import com.telq.sdk.model.network.Network;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
