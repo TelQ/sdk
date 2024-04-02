@@ -43,10 +43,14 @@ jobs:
             -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
             -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
             -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} \
-            clean package release:prepare release:perform
+            clean package release:prepare
       - name: Push tags
         run: |
           tag="sdk-${{ github.event.inputs.releaseVersion }}"
           messages="Release ${{ github.event.inputs.releaseVersion }}"
-          git tag -a "${tag}" -m "${message}"
+          if git rev-parse --verify --quiet "$tag" >/dev/null; then
+            echo "Tag $tag already exists."
+          else
+            git tag -a "$tag" -m "$message"
+          fi
           git push origin "${tag}"
