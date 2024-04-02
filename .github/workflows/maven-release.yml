@@ -43,7 +43,7 @@ jobs:
             -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
             -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
             -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} \
-            clean package release:prepare
+            clean package release:prepare release:perform
       - name: Push tags
         run: |
           tag="sdk-${{ github.event.inputs.releaseVersion }}"
