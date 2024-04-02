@@ -1,32 +1,53 @@
-package com.telq.sdk;
+package com.telq.sdk.clients;
 
+import com.google.gson.reflect.TypeToken;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
-import com.telq.sdk.model.tests.*;
+import com.telq.sdk.model.tests.Result;
+import com.telq.sdk.model.tests.Test;
+import com.telq.sdk.model.tests.TestIdTextOptions;
+import com.telq.sdk.model.tests.TestRequest;
+import com.telq.sdk.model.v3.lnt.Page;
+import com.telq.sdk.model.v3.lnt.PageConf;
+import com.telq.sdk.model.v3.mt.MtApiDestinationNetworkDetailsDto;
+import com.telq.sdk.model.v3.mt.MtApiSmscInfoDto;
+import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.authorization.RestV2AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
-import com.telq.sdk.utils.RequestDataValidator;
+import com.telq.sdk.service.rest.RestClient;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
+import com.telq.sdk.utils.RequestDataValidator;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 
+import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class TelQTestClient {
+import static com.telq.sdk.model.TelQUrls.mtTestsUrl;
 
+
+public class TelQTestClient implements ManualTestingClient {
+    @Getter
+    private static CloseableHttpClient httpClient;
+    private static RestClient restClient;
     private static TelQTestClient instance = null;
 
-    /*
-    Services
-     */
+
+    @Getter
     private final AuthorizationService authorizationService;
     private final ApiConnectorService apiConnectorService;
 
@@ -52,7 +73,9 @@ public class TelQTestClient {
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setMaxTotal(totalConnectionsForClient);
 
-        this.apiConnectorService = new RestV2ApiConnectorService(HttpClients.custom().setConnectionManager(connManager).build());
+        httpClient = HttpClients.custom().setConnectionManager(connManager).build();
+
+        this.apiConnectorService = new RestV2ApiConnectorService(httpClient);
 
         authorizationService = new RestV2AuthorizationService(
                 ApiCredentials.builder()
@@ -60,7 +83,8 @@ public class TelQTestClient {
                     .appKey(appKey)
                     .build(),
                 apiConnectorService
-                );
+        );
+        restClient = new RestClient(httpClient, authorizationService);
     }
 
     /**
@@ -69,7 +93,8 @@ public class TelQTestClient {
      * @param appId used for authentication
      * @return Instance of {@link TelQTestClient}
      */
-    public static TelQTestClient getInstance(String appKey, String appId) throws Exception {
+    @SneakyThrows
+    public static TelQTestClient getInstance(String appKey, String appId)  {
         if (instance == null) {
             instance = new TelQTestClient(appKey, appId, DEFAULT_TOTAL_CONNECTIONS_FOR_CLIENT);
         }
@@ -100,19 +125,45 @@ public class TelQTestClient {
     /**
      * Returns the list of all currently available networks.
      * @return List of {@link Network} which represent all currently available networks.
-     * @throws Exception
      */
-    public List<Network> getNetworks() throws Exception {
+    @Override
+    @SneakyThrows
+    public List<Network> getNetworks() {
         return apiConnectorService.getNetworks(authorizationService, new HttpGet(TelQUrls.getNetworksUrl()));
+    }
+
+    @Override
+    @SneakyThrows
+    public List<Network> getNetworks(String mcc, String mnc) {
+        return getNetworks(mcc, mnc, null);
+    }
+
+    @Override
+    @SneakyThrows
+    public List<Network> getNetworks(String mcc, String mnc, String portedFromMnc) {
+        String url = TelQUrls.getNetworksUrl();
+        if (mcc != null && !mcc.isEmpty()) {
+            url += "?mcc=" + mcc;
+        }
+        if (mnc != null && !mnc.isEmpty()) {
+            if (mcc != null && !mcc.isEmpty()) url += "&mnc=" + mnc;
+            else url += "?mnc=" + mnc;
+        }
+        if (portedFromMnc != null && !portedFromMnc.isEmpty()) {
+            if (mcc != null && !mcc.isEmpty() || mnc != null && !mnc.isEmpty()) url += "&portedFromMnc=" + portedFromMnc;
+            else url += "?portedFromMnc=" + portedFromMnc;
+        }
+        return apiConnectorService.getNetworks(authorizationService, new HttpGet(url));
     }
 
     /**
      * Makes tests with parameters passed in the TestRequest object
      * @param testRequest test request object with any or none of the optional parameters specified
      * @return List of {@link Test} depending on the number of networks sent this represents the test initiated.
-     * @throws Exception
      */
-    public List<Test> initiateNewTests(TestRequest testRequest) throws Exception {
+    @Override
+    @SneakyThrows
+    public List<Test> createTests(TestRequest testRequest) {
         List<DestinationNetwork> destinationNetworks = convertToDestinationNetwork(testRequest.getNetworks());
         if(!RequestDataValidator.validateNetworks(destinationNetworks))
             throw new Exception("Incorrect data passed in networks.");
@@ -330,15 +381,70 @@ public class TelQTestClient {
      * Query for the test result with the given id
      * @param testId with which the query is done.
      * @return {@link Result} of the test
-     * @throws Exception
      */
-    public Result getTestResult(Long testId) throws Exception {
-        if(testId <= 0)
-            throw new Exception("Invalid id passed");
-
+    @Override
+    @SneakyThrows
+    public MtApiTestResultDto getTestById(Long testId)  {
+        if (testId <= 0) throw new Exception("Invalid id passed");
         HttpGet request = new HttpGet(TelQUrls.getResultsUrl() + "/" + testId);
+        Result testResult = apiConnectorService.getTestResult(authorizationService, request);
+        return mapDto(testResult);
+    }
 
-        return apiConnectorService.getTestResult(authorizationService, request);
+    private static MtApiTestResultDto mapDto(Result testResult) {
+        MtApiDestinationNetworkDetailsDto destinationNetworkDetails = null;
+        if (testResult.getDestinationNetworkDetails() != null) {
+            destinationNetworkDetails = MtApiDestinationNetworkDetailsDto.builder()
+                    .mcc(testResult.getDestinationNetworkDetails().getMcc())
+                    .mnc(testResult.getDestinationNetworkDetails().getMnc())
+                    .portedFromMnc(testResult.getDestinationNetworkDetails().getPortedFromMnc())
+                    .countryName(testResult.getDestinationNetworkDetails().getCountryName())
+                    .portedFromProviderName(testResult.getDestinationNetworkDetails().getPortedFromProviderName())
+                    .providerName(testResult.getDestinationNetworkDetails().getProviderName())
+                    .build();
+        }
+        MtApiSmscInfoDto smscInfo = null;
+        if (testResult.getSmscInfo() != null) {
+            smscInfo = MtApiSmscInfoDto.builder()
+                    .providerName(testResult.getSmscInfo().getProviderName())
+                    .countryCode(testResult.getSmscInfo().getCountryCode())
+                    .countryName(testResult.getSmscInfo().getCountryName())
+                    .mcc(testResult.getSmscInfo().getMcc())
+                    .mnc(testResult.getSmscInfo().getMnc())
+                    .smscNumber(testResult.getSmscInfo().getSmscNumber())
+                    .smscNumber(testResult.getSmscInfo().getSmscNumber())
+                    .build();
+        }
+        return MtApiTestResultDto.builder()
+                .id(testResult.getId())
+                .testIdText(testResult.getTestIdText())
+                .senderDelivered(testResult.getSenderDelivered())
+                .textDelivered(testResult.getTextDelivered())
+                .testCreatedAt(testResult.getTestCreatedAt())
+                .smsReceivedAt(testResult.getSmsReceivedAt())
+                .receiptDelay(testResult.getReceiptDelay())
+                .receiptStatus(testResult.getTestStatus())
+                .destinationNetworkDetails(destinationNetworkDetails)
+                .smscInfo(smscInfo)
+                .pdusDelivered(testResult.getPdusDelivered())
+                .build();
+    }
+
+    /**
+     * Query for the test result page with the given page configuration and time range
+     */
+    @Override
+    public Page<MtApiTestResultDto> getTestPage(PageConf pageConf, Instant from, Instant to) {
+        Map<String, String> queryParams = new HashMap<>();
+        if (from != null) queryParams.put("from", from.toString());
+        if (to != null) queryParams.put("to", to.toString());
+        if (pageConf != null) {
+            if (pageConf.getPage() != null) queryParams.put("page", pageConf.getPage().toString());
+            if (pageConf.getSize() != null) queryParams.put("size", pageConf.getSize().toString());
+            if (pageConf.getOrder() != null) queryParams.put("order", String.valueOf(pageConf.getOrder()));
+        }
+        Type type = new TypeToken<Page<MtApiTestResultDto>>() {}.getType();
+        return restClient.httpGet(mtTestsUrl, type, queryParams);
     }
 
     /**

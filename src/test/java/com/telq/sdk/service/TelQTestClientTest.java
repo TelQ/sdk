@@ -1,10 +1,11 @@
 package com.telq.sdk.service;
 
 import com.telq.sdk.BaseTest;
-import com.telq.sdk.TelQTestClient;
+import com.telq.sdk.clients.TelQTestClient;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
 import com.telq.sdk.model.tests.*;
+import com.telq.sdk.model.v3.mt.MtApiTestResultDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
@@ -49,12 +50,18 @@ public class TelQTestClientTest extends BaseTest {
     private ApiConnectorService apiConnectorService;
 
 
-    @Captor ArgumentCaptor<List<DestinationNetwork>> networksCaptor;
-    @Captor ArgumentCaptor<Integer> maxCallbackRetriesCaptor;
-    @Captor ArgumentCaptor<String> callbackUrlCaptor;
-    @Captor ArgumentCaptor<Integer> testTimeToLiveCaptor;
-    @Captor ArgumentCaptor<String> callbackTokenCaptor;
-    @Captor ArgumentCaptor<TestIdTextOptions> testIdTextOptionsCaptor;
+    @Captor
+    ArgumentCaptor<List<DestinationNetwork>> networksCaptor;
+    @Captor
+    ArgumentCaptor<Integer> maxCallbackRetriesCaptor;
+    @Captor
+    ArgumentCaptor<String> callbackUrlCaptor;
+    @Captor
+    ArgumentCaptor<Integer> testTimeToLiveCaptor;
+    @Captor
+    ArgumentCaptor<String> callbackTokenCaptor;
+    @Captor
+    ArgumentCaptor<TestIdTextOptions> testIdTextOptionsCaptor;
 
     private TelQTestClient testClient;
 
@@ -68,8 +75,8 @@ public class TelQTestClientTest extends BaseTest {
     );
 
     private List<DestinationNetwork> mockDestinations = Arrays.asList(
-                DestinationNetwork.builder().mcc(mockNetworks.get(0).getMcc()).mnc(mockNetworks.get(0).getMnc()).build(),
-                DestinationNetwork.builder().mcc(mockNetworks.get(1).getMcc()).mnc(mockNetworks.get(1).getMnc()).build()
+            DestinationNetwork.builder().mcc(mockNetworks.get(0).getMcc()).mnc(mockNetworks.get(0).getMnc()).build(),
+            DestinationNetwork.builder().mcc(mockNetworks.get(1).getMcc()).mnc(mockNetworks.get(1).getMnc()).build()
     );
 
     private List<com.telq.sdk.model.tests.Test> returnTests = Arrays.asList(
@@ -96,13 +103,13 @@ public class TelQTestClientTest extends BaseTest {
 
         //InitiateTests
         Mockito.lenient().when(apiConnectorService.sendTests(
-                eq(authorizationService),
-                any()))
+                        eq(authorizationService),
+                        any()))
                 .thenReturn(returnTests);
 
         Mockito.lenient().when(apiConnectorService.getTestResult(
-                eq(authorizationService),
-                any()))
+                        eq(authorizationService),
+                        any()))
                 .thenReturn(Result.builder().id(1L).build());
 
         authorizationServiceField = TelQTestClient.class.getDeclaredField("authorizationService");
@@ -167,7 +174,6 @@ public class TelQTestClientTest extends BaseTest {
     }
 
 
-
     @Test
     public void initiateNewTests_withTtl_pass() throws Exception {
         List<Network> networks = testClient.getNetworks();
@@ -179,7 +185,7 @@ public class TelQTestClientTest extends BaseTest {
     }
 
     @Test
-    public void  initiateNewTests_withTtlAsMinute_pass() throws Exception {
+    public void initiateNewTests_withTtlAsMinute_pass() throws Exception {
         List<Network> networks = testClient.getNetworks();
 
         List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(networks, 1, TimeUnit.MINUTES);
@@ -226,14 +232,14 @@ public class TelQTestClientTest extends BaseTest {
                 .timeUnit(TimeUnit.SECONDS)
                 .testIdTextOptions(
                         TestIdTextOptions.builder()
-                        .testIdTextType(TestIdTextType.ALPHA_NUMERIC)
-                        .testIdTextCase(TestIdTextCase.MIXED)
-                        .testIdTextLength(6)
-                        .build())
+                                .testIdTextType(TestIdTextType.ALPHA_NUMERIC)
+                                .testIdTextCase(TestIdTextCase.MIXED)
+                                .testIdTextLength(6)
+                                .build())
                 .build();
 
         // when
-        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+        List<com.telq.sdk.model.tests.Test> tests = testClient.createTests(testRequest);
 
         // then
         assertEquals(returnTests.size(), tests.size());
@@ -242,14 +248,13 @@ public class TelQTestClientTest extends BaseTest {
     }
 
 
-
     @Test
     public void initiateNewTests_TestRequestObject_onlyNetworks_pass() throws Exception {
         TestRequest testRequest = TestRequest.builder()
                 .networks(testClient.getNetworks())
                 .build();
 
-        List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+        List<com.telq.sdk.model.tests.Test> tests = testClient.createTests(testRequest);
 
         assertEquals(returnTests.size(), tests.size());
         assertEquals(returnTests.get(0).getId(), tests.get(0).getId());
@@ -265,7 +270,7 @@ public class TelQTestClientTest extends BaseTest {
                 testTimeToLiveCaptor.capture(),
                 callbackTokenCaptor.capture(),
                 testIdTextOptionsCaptor.capture()
-                );
+        );
 
         int capturedMaxCallbackRetries = maxCallbackRetriesCaptor.getValue();
         String capturedCallbackUrl = callbackUrlCaptor.getValue();
@@ -287,7 +292,7 @@ public class TelQTestClientTest extends BaseTest {
                 .build();
 
         try {
-            List<com.telq.sdk.model.tests.Test> tests = testClient.initiateNewTests(testRequest);
+            List<com.telq.sdk.model.tests.Test> tests = testClient.createTests(testRequest);
         } catch (Exception e) {
             assertEquals("Incorrect data passed in networks.", e.getMessage());
         }
@@ -295,15 +300,14 @@ public class TelQTestClientTest extends BaseTest {
 
     @Test
     public void getTestResult_validId_pass() throws Exception {
-        Result result = testClient.getTestResult(1L);
-
+        MtApiTestResultDto result = testClient.getTestById(1L);
         assertEquals(1L, (long) result.getId());
     }
 
     @Test
-    public void getTestResult_invalidId_pass()  {
+    public void getTestResult_invalidId_pass() {
         try {
-            Result result = testClient.getTestResult(-1L);
+            MtApiTestResultDto result = testClient.getTestById(-1L);
         } catch (Exception e) {
             assertEquals("Invalid id passed", e.getMessage());
         }
@@ -322,12 +326,12 @@ public class TelQTestClientTest extends BaseTest {
             threads.add(new Thread(() -> {
                 try {
                     barrier.await();
-                    if(JsonMapper.getInstance().getMapper() == null) {
+                    if (JsonMapper.getInstance().getMapper() == null) {
                         throw new NullPointerException("JSON MAPPER NULL");
                     }
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
-                } catch(NullPointerException nullPointerException) {
+                } catch (NullPointerException nullPointerException) {
                     nullCaught.set(true);
                 }
             }));
@@ -335,11 +339,10 @@ public class TelQTestClientTest extends BaseTest {
 
         threads.forEach(Thread::start);
         Thread.sleep(5000);
-        if(nullCaught.get()) {
+        if (nullCaught.get()) {
             fail();
         }
     }
-
 
 
 }
