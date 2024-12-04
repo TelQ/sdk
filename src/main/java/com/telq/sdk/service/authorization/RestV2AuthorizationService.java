@@ -23,9 +23,9 @@ public class RestV2AuthorizationService implements AuthorizationService {
     private final ApiCredentials apiCredentials;
     private final ApiConnectorService apiConnectorService;
 
-    private TokenBearer tokenBearer;
+    private volatile TokenBearer tokenBearer;
 
-    private Instant lastTokenGet;
+    private volatile Instant lastTokenGet;
 
     public RestV2AuthorizationService(ApiCredentials apiCredentials, ApiConnectorService apiConnectorService) {
         this.apiCredentials = apiCredentials;
@@ -65,7 +65,7 @@ public class RestV2AuthorizationService implements AuthorizationService {
      * @throws AuthorizationServiceException if the token is invalid
      */
     @Override
-    public TokenBearer checkAndGetToken() throws Exception {
+    public synchronized TokenBearer checkAndGetToken() throws Exception {
         if(tokenBearer != null) {
 
             if(lastTokenGet.isBefore(Instant.now().minus(24, ChronoUnit.HOURS))) {
