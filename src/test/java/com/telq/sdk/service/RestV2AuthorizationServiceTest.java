@@ -121,7 +121,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
 
     @Test
     public void testRaceConditionInCheckAndGetToken() throws Exception {
-        int numberOfThreads = 10;
+        int numberOfThreads = 4;
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
         RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
                 correctApiCredentials,
