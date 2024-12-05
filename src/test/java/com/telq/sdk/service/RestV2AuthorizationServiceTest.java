@@ -132,7 +132,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
 
         // Mock the token to be expired
         TokenBearer expiredToken = TokenBearer.builder().token("EXPIRED_TOKEN").build();
-        Mockito.when(apiConnectorService.getToken(any())).thenReturn(expiredToken);
+        Mockito.lenient().when(apiConnectorService.getToken(any())).thenReturn(expiredToken);
 
         // Manually set the lastTokenGet to be more than 24 hours ago
         Field lastTokenGetField = RestV2AuthorizationService.class.getDeclaredField("lastTokenGet");
