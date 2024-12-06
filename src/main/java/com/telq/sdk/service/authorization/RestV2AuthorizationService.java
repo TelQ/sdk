@@ -70,9 +70,7 @@ public class RestV2AuthorizationService implements AuthorizationService {
             if(lastTokenGet.isBefore(Instant.now().minus(24, ChronoUnit.HOURS))) {
                 System.out.println("Token more than a day old, trying to retrieve another token");
                 try {
-                    this.requestToken();
-
-                checkAndGetToken();
+                    this.requestToken();;
                 } catch (IOException | ApiCredentialsException e) {
                     e.printStackTrace();
                     throw new AuthorizationServiceException("Token invalid");
