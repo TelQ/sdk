@@ -20,6 +20,7 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
@@ -172,7 +173,8 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
             request.setHeader("results-callback-token", callBackToken);
 
         Gson mapper = JsonMapper.getInstance().getMapper();
-        StringEntity bodyEntity = new StringEntity(mapper.toJson(requestTestDto));
+        StringEntity bodyEntity = new StringEntity(mapper.toJson(requestTestDto),
+                ContentType.create("text/plain", "UTF-8"));
         request.setEntity(bodyEntity);
 
         return request;
