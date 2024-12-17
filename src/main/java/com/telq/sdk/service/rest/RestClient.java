@@ -12,6 +12,7 @@ import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.net.URIBuilder;
@@ -60,8 +61,7 @@ public class RestClient {
 
     @SneakyThrows
     private <T, R> R requestWithBody(T body, Type responseType, HttpUriRequestBase request) {
-        String json = mapper.toJson(body);
-        request.setEntity(new StringEntity(json));
+        request.setEntity(getRequestEntity(body));
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         useToken(request);
@@ -73,6 +73,12 @@ public class RestClient {
         }
     }
 
+
+    private <T> StringEntity getRequestEntity(T body){
+        String json = mapper.toJson(body);
+        return new StringEntity(json, ContentType.create("text/plain", "UTF-8"));
+    }
+
     @SneakyThrows
     private void useToken(HttpUriRequestBase request) {
         TokenBearer tokenBearer = authorizationService.checkAndGetToken();
@@ -82,8 +88,7 @@ public class RestClient {
     @SneakyThrows
     public <T> void httpPostNoResponse(String url, T body) {
         HttpPost request = new HttpPost(url);
-        String json = mapper.toJson(body);
-        request.setEntity(new StringEntity(json));
+        request.setEntity(getRequestEntity(body));
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         useToken(request);
@@ -96,8 +101,7 @@ public class RestClient {
     @SneakyThrows
     public <T> void httpPutNoResponse(String url, T body) {
         HttpPut request = new HttpPut(url);
-        String json = mapper.toJson(body);
-        request.setEntity(new StringEntity(json));
+        request.setEntity(getRequestEntity(body));
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         useToken(request);
