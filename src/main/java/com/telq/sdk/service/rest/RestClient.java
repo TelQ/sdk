@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.utils.JsonMapper;
+import com.telq.sdk.utils.VersionReader;
 import lombok.SneakyThrows;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -40,6 +41,7 @@ public class RestClient {
         }
         HttpGet request = new HttpGet(uriBuilder.build());
         useToken(request);
+        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             String json = EntityUtils.toString(response.getEntity());
             return mapper.fromJson(json, responseType);
@@ -49,6 +51,7 @@ public class RestClient {
     public <T, R> R httpPost(String url, T body, Type responseType) {
         HttpPost request = new HttpPost(url);
         useToken(request);
+        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         return requestWithBody(body, responseType, request);
     }
 
@@ -56,6 +59,7 @@ public class RestClient {
     public <T, R> R httpPut(String url, T body, Type responseType) {
         HttpPut request = new HttpPut(url);
         useToken(request);
+        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         return requestWithBody(body, responseType, request);
     }
 
@@ -64,6 +68,7 @@ public class RestClient {
         request.setEntity(getRequestEntity(body));
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
+        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         useToken(request);
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
@@ -92,6 +97,7 @@ public class RestClient {
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
         useToken(request);
+        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             if (response.getCode() != 200)
                 throw new RuntimeException(response.getCode() + " " + response.getReasonPhrase());
@@ -115,6 +121,7 @@ public class RestClient {
     public void httpDelete(String url) {
         HttpDelete request = new HttpDelete(url);
         useToken(request);
+        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             if (response.getCode() != 200)
                 throw new RuntimeException(response.getCode() + " " + response.getReasonPhrase());
