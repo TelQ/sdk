@@ -23,4 +23,5 @@ jobs:
     - name: Build with Maven
       run: |
         mvn -B process-resources test package --file pom.xml
-        ls -lah target/*
+        cat target/classes/version.properties
+        cat target/test-classes/version.properties
