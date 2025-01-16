@@ -15,6 +15,7 @@ import com.telq.sdk.model.token.TokenResponseDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.utils.HttpCodeStatusChecker;
 import com.telq.sdk.utils.JsonMapper;
+import com.telq.sdk.utils.VersionReader;
 import lombok.NonNull;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
@@ -133,6 +134,8 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
             request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
         }
 
+        request.setHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
+
         CloseableHttpResponse response = httpClient.execute(request);
 
         HttpCodeStatusChecker.statusCheck(response.getCode());
@@ -168,6 +171,7 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
 
         HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
+        request.setHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
 
         if(callBackToken != null)
             request.setHeader("results-callback-token", callBackToken);
