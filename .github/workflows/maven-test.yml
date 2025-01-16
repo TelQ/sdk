@@ -22,5 +22,6 @@ jobs:
         java-version: 11
     - name: Build with Maven
       run: |
-        mvn -B package --file pom.xml
+        mvn -B process-resources test package --file pom.xml
         cat src/main/resources/version.properties
+        cat src/test/resources/version.properties
