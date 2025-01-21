@@ -32,7 +32,7 @@ jobs:
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PAT_TOKEN }}
           branch: ${{ github.ref }}
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v3
