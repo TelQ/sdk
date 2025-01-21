@@ -70,7 +70,7 @@
                 <version>3.0.1</version>
                 <configuration>
                     <localCheckout>true</localCheckout>
-                    <pushChanges>true</pushChanges>
+                    <pushChanges>false</pushChanges>
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
                     <tagNameFormat>sdk-@{project.version}</tagNameFormat>
@@ -168,7 +168,7 @@
         <connection>scm:git:git://github.com/TelQ/sdk.git</connection>
         <developerConnection>scm:git:git@github.com:TelQ/sdk.git</developerConnection>
         <url>https://github.com/TelQ/sdk</url>
-        <tag>sdk-1.3.5</tag>
+        <tag>sdk-${project.version}</tag>
     </scm>
 
     <properties>
