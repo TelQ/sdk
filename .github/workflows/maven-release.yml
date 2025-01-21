@@ -1,15 +1,7 @@
 name: Publish SDK to the Maven Central Repository
 on:
-  workflow_dispatch:
-    inputs:
-      releaseVersion:
-        description: "Default version to use when preparing a release."
-        required: true
-        default: "X.Y.Z"
-      developmentVersion:
-        description: "Default version to use for new local working copy."
-        required: true
-        default: "X.Y.Z-SNAPSHOT"
+  release:
+    types: [published]
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -20,11 +12,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-      - id: install-gpg-key
-        name: Install GPG secret key
-        run: |
-          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
-          gpg --list-secret-keys --keyid-format LONG
       - name: Configure Git user
         run: |
           git config user.email "actions@github.com"
@@ -36,9 +23,6 @@ jobs:
           mvn \
             --no-transfer-progress \
             --batch-mode \
-            -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
-            -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
-            -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} \
             clean package release:prepare
       - name: Push changes
         uses: ad-m/github-push-action@master
@@ -53,6 +37,11 @@ jobs:
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
+      - id: install-gpg-key
+        name: Install GPG secret key
+        run: |
+          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
       - name: Publish to Maven central
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
@@ -63,6 +52,4 @@ jobs:
             --batch-mode \
             -DskipTests \
             -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
-            -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
-            -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} \
             release:perform
