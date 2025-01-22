@@ -5,10 +5,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-          fetch_depth: 0
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Java
         uses: actions/setup-java@v3
