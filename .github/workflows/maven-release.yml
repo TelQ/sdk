@@ -12,6 +12,7 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
