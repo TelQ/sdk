@@ -68,7 +68,7 @@ public class RestClient {
         request.setEntity(getRequestEntity(body));
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-type", "application/json");
-        request.addHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
+        request.setHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
         useToken(request);
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
