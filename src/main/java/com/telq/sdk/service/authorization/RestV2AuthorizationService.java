@@ -65,21 +65,17 @@ public class RestV2AuthorizationService implements AuthorizationService {
      * @throws AuthorizationServiceException if the token is invalid
      */
     @Override
-    public TokenBearer checkAndGetToken() throws Exception {
+    public synchronized TokenBearer checkAndGetToken() throws Exception {
         if(tokenBearer != null) {
-
             if(lastTokenGet.isBefore(Instant.now().minus(24, ChronoUnit.HOURS))) {
                 System.out.println("Token more than a day old, trying to retrieve another token");
                 try {
-                    this.requestToken();
+                    this.requestToken();;
                 } catch (IOException | ApiCredentialsException e) {
                     e.printStackTrace();
                     throw new AuthorizationServiceException("Token invalid");
                 }
-
-                checkAndGetToken();
             }
-
             return tokenBearer;
         } else
             return this.requestToken();
