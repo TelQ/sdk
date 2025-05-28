@@ -47,8 +47,19 @@ jobs:
       - name: Build and install SDK to local Maven repo
         run: mvn clean install -DskipTests
 
+      - name: Get SDK version from pom.xml
+        id: get-version
+        run: |
+            VERSION=$(grep -m1 '<version>' pom.xml | sed -E 's/.*<version>(.*)<\/version>.*/\1/')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Clone sdk-test repo
         run: git clone https://github.com/TelQ/sdk-test.git ../sdk-test
+
+      - name: Replace SDK version in sdk-test POM
+        run: |
+          cd ../sdk-test
+          sed -i "0,/<groupId>com.telqtele<\/groupId>/{n;s|<version>.*</version>|<version>${{ steps.get-version.outputs.version }}</version>|}" pom.xml
 
       - name: Run sdk-test with local SDK
         run: |
