@@ -54,12 +54,21 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Clone sdk-test repo
-        run: git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/TelQ/sdk-test.git ../sdk-test
+        run: git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/telq/sdk-test.git ../sdk-test
 
       - name: Replace SDK version in sdk-test POM
         run: |
           cd ../sdk-test
-          sed -i "0,/<groupId>com.telqtele<\/groupId>/{n;s|<version>.*</version>|<version>${{ steps.get-version.outputs.version }}</version>|}" pom.xml
+            NEW_VERSION=${{ steps.get-version.outputs.version }}
+            sed -i '/<dependency>/,/<\/dependency>/{
+            /<groupId>com.telqtele<\/groupId>/ {
+            N
+            /<artifactId>sdk<\/artifactId>/ {
+            N
+            s|<version>.*</version>|<version>'"$NEW_VERSION"'</version>|
+          }
+          }
+          }' pom.xml
 
       - name: Run sdk-test with local SDK
         run: |
