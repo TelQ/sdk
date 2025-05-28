@@ -25,6 +25,11 @@ jobs:
         mvn -B package --file pom.xml
 
   sdk-integration-test:
+    env:
+      appKey: ${{ secrets.APP_KEY }}
+      appId: ${{ secrets.APP_ID }}
+      userId: ${{ secrets.USER_ID }}
+      supplierId: ${{ secrets.SUPPLIER_ID }}
     name: SDK E2E Test
     runs-on: ubuntu-latest
     needs: build
