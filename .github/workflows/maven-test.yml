@@ -54,7 +54,7 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Clone sdk-test repo
-        run: git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/telq/sdk-test.git ../sdk-test
+        run: git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/telq/sdk-test.git ../sdk-test
 
       - name: Replace SDK version in sdk-test POM
         run: |
