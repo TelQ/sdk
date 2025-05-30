@@ -5,9 +5,9 @@ name: SDK Test run
 
 on:
   push:
-    branches: [ TP-10343 ]
+    branches: [ master ]
   pull_request:
-    branches: [ TP-10343 ]
+    branches: [ master ]
 
 jobs:
   build:
