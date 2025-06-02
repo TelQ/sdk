@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 17
-          distribution: corretto
+          distribution: temurin
 
       - name: Build and install SDK to local Maven repo
         run: mvn clean install -DskipTests -Dgpg.skip=true
