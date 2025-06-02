@@ -63,11 +63,11 @@ jobs:
 
       - name: Run sdk-test Maven tests inside Docker
         run: |
-              docker run --rm \
-                -e appKey=${{ secrets.APP_KEY }} \
-                -e appId=${{ vars.APP_ID }} \
-                -e userId=${{ vars.USER_ID }} \
-                -e supplierId=${{ vars.SUPPLIER_ID }} \
-                -v ~/.m2:/root/.m2 \
-                789140966122.dkr.ecr.eu-central-1.amazonaws.com/sdk-test:latest \
-                mvn test -Dsdk.version=${{ steps.get-version.outputs.version }}
+            docker run --rm \
+              -e appKey=${{ secrets.APP_KEY }} \
+              -e appId=${{ vars.APP_ID }} \
+              -e userId=${{ vars.USER_ID }} \
+              -e supplierId=${{ vars.SUPPLIER_ID }} \
+              -v ~/.m2:/root/.m2 \
+              789140966122.dkr.ecr.eu-central-1.amazonaws.com/sdk-test:latest \
+              mvn test -Dsdk.version=${{ steps.get-version.outputs.version }}
