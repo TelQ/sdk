@@ -55,6 +55,9 @@ jobs:
             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             aws-region: eu-central-1
 
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
       - name: Pull sdk-test Docker image
         run: docker pull 789140966122.dkr.ecr.eu-central-1.amazonaws.com/sdk-test:latest
 
