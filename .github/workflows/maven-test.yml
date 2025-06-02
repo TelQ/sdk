@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout SDK (PR branch)
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v1
