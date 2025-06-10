@@ -4,8 +4,8 @@ on:
   push:
     branches: [ TP-10364 ]
 
-  jobs:
-    sdk-integration-test:
+jobs:
+   sdk-integration-test:
       runs-on: ubuntu-latest
       steps:
         - name: Checkout SDK
