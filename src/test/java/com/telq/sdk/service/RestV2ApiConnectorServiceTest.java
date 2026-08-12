@@ -2,6 +2,7 @@ package com.telq.sdk.service;
 
 import com.telq.sdk.BaseTest;
 import com.telq.sdk.exceptions.httpExceptions.clientSide.BadRequest;
+import com.telq.sdk.exceptions.httpExceptions.clientSide.Unauthorized;
 import com.telq.sdk.exceptions.httpExceptions.serverSide.InternalServerError;
 import com.telq.sdk.model.MockResponses;
 import com.telq.sdk.model.TelQUrls;
@@ -16,11 +17,14 @@ import com.telq.sdk.service.rest.RestV2ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.message.StatusLine;
 import org.json.JSONObject;
@@ -31,9 +35,20 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -223,10 +238,194 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         assertEquals(expectedResponse, responseNetworks);
     }
 
-//    @Test TODO
-//    public void getNetworks_invalidToken_badRequestExpected() {
-//
-//    }
+    @Test
+    public void sendTests_unauthorizedRefreshesTokenAndRetriesOnce() throws Exception {
+        TokenBearer rejectedToken = TokenBearer.builder().token("rejected-token").build();
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        CloseableHttpResponse unauthorizedResponse = mockResponse(401, null);
+        CloseableHttpResponse successfulResponse = mockResponse(200, "[]");
+        List<String> authorizationHeaders = new ArrayList<>();
+        AtomicInteger executions = new AtomicInteger();
+        HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
+        StringEntity requestEntity = new StringEntity("request-body");
+        request.setEntity(requestEntity);
+
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken, rejectedToken);
+        Mockito.when(authorizationService.requestToken()).thenReturn(refreshedToken);
+        Mockito.when(mockClient.execute(Mockito.any(HttpUriRequestBase.class))).thenAnswer(invocation -> {
+            HttpUriRequestBase executedRequest = invocation.getArgument(0);
+            authorizationHeaders.add(executedRequest.getFirstHeader("Authorization").getValue());
+            return executions.getAndIncrement() == 0 ? unauthorizedResponse : successfulResponse;
+        });
+
+        List<com.telq.sdk.model.tests.Test> response = connectorService.sendTests(authorizationService, request);
+
+        assertTrue(response.isEmpty());
+        assertSame(requestEntity, request.getEntity());
+        assertTrue(request.getEntity().isRepeatable());
+        assertEquals(2, executions.get());
+        assertEquals("Bearer rejected-token", authorizationHeaders.get(0));
+        assertEquals("Bearer refreshed-token", authorizationHeaders.get(1));
+        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
+        Mockito.verify(successfulResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void getNetworks_secondUnauthorizedThrowsAfterSingleRetry() throws Exception {
+        TokenBearer rejectedToken = TokenBearer.builder().token("rejected-token").build();
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        CloseableHttpResponse firstUnauthorizedResponse = mockResponse(401, null);
+        CloseableHttpResponse secondUnauthorizedResponse = mockResponse(401, null);
+        HttpGet request = new HttpGet(TelQUrls.getNetworksUrl());
+
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken, rejectedToken);
+        Mockito.when(authorizationService.requestToken()).thenReturn(refreshedToken);
+        Mockito.when(mockClient.execute(request)).thenReturn(firstUnauthorizedResponse, secondUnauthorizedResponse);
+
+        assertThrows(Unauthorized.class, () -> connectorService.getNetworks(authorizationService, request));
+
+        assertEquals("Bearer refreshed-token", request.getFirstHeader("Authorization").getValue());
+        Mockito.verify(mockClient, Mockito.times(2)).execute(request);
+        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(firstUnauthorizedResponse, Mockito.times(1)).close();
+        Mockito.verify(secondUnauthorizedResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void sendTests_tokenRefreshFailureDoesNotRetryAndClosesResponse() throws Exception {
+        TokenBearer rejectedToken = TokenBearer.builder().token("rejected-token").build();
+        CloseableHttpResponse unauthorizedResponse = mockResponse(401, null);
+        HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
+
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken, rejectedToken);
+        Mockito.when(authorizationService.requestToken()).thenThrow(new IllegalStateException("refresh failed"));
+        Mockito.when(mockClient.execute(request)).thenReturn(unauthorizedResponse);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> connectorService.sendTests(authorizationService, request)
+        );
+
+        assertEquals("refresh failed", exception.getMessage());
+        Mockito.verify(mockClient, Mockito.times(1)).execute(request);
+        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void sendTests_unauthorizedNonRepeatableBodyDoesNotRetry() throws Exception {
+        TokenBearer rejectedToken = TokenBearer.builder().token("rejected-token").build();
+        CloseableHttpResponse unauthorizedResponse = mockResponse(401, null);
+        HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
+        byte[] requestBody = "request-body".getBytes(StandardCharsets.UTF_8);
+        request.setEntity(new InputStreamEntity(
+                new ByteArrayInputStream(requestBody),
+                requestBody.length,
+                ContentType.APPLICATION_JSON
+        ));
+
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken);
+        Mockito.when(mockClient.execute(request)).thenReturn(unauthorizedResponse);
+
+        assertThrows(Unauthorized.class, () -> connectorService.sendTests(authorizationService, request));
+
+        assertFalse(request.getEntity().isRepeatable());
+        Mockito.verify(mockClient, Mockito.times(1)).execute(request);
+        Mockito.verify(authorizationService, Mockito.never()).requestToken();
+        Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void getToken_unauthorizedDoesNotRefreshOrRetry() throws Exception {
+        HttpPost request = new HttpPost(TelQUrls.getTokenUrl());
+        CloseableHttpResponse unauthorizedResponse = mockResponse(401, null);
+        Mockito.when(mockClient.execute(request)).thenReturn(unauthorizedResponse);
+
+        assertThrows(Unauthorized.class, () -> connectorService.getToken(request));
+
+        Mockito.verify(mockClient, Mockito.times(1)).execute(request);
+        Mockito.verifyNoInteractions(authorizationService);
+        Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void getTestResult_badRequestDoesNotRefreshOrRetry() throws Exception {
+        HttpGet request = new HttpGet(TelQUrls.getResultsUrl() + "/123");
+        CloseableHttpResponse badRequestResponse = mockResponse(400, null);
+        Mockito.when(mockClient.execute(request)).thenReturn(badRequestResponse);
+
+        assertThrows(BadRequest.class, () -> connectorService.getTestResult(authorizationService, request));
+
+        Mockito.verify(mockClient, Mockito.times(1)).execute(request);
+        Mockito.verify(authorizationService, Mockito.times(1)).checkAndGetToken();
+        Mockito.verify(authorizationService, Mockito.never()).requestToken();
+        Mockito.verify(badRequestResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void concurrentUnauthorizedResponsesShareOneTokenRefresh() throws Exception {
+        TokenBearer rejectedToken = TokenBearer.builder().token("rejected-token").build();
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        AtomicReference<TokenBearer> currentToken = new AtomicReference<>(rejectedToken);
+        AtomicInteger refreshCount = new AtomicInteger();
+        CountDownLatch rejectedRequestsStarted = new CountDownLatch(2);
+        List<CloseableHttpResponse> responses = Collections.synchronizedList(new ArrayList<>());
+        List<String> authorizationHeaders = new CopyOnWriteArrayList<>();
+
+        Mockito.when(authorizationService.checkAndGetToken()).thenAnswer(invocation -> currentToken.get());
+        Mockito.when(authorizationService.requestToken()).thenAnswer(invocation -> {
+            refreshCount.incrementAndGet();
+            currentToken.set(refreshedToken);
+            return refreshedToken;
+        });
+        Mockito.when(mockClient.execute(Mockito.any(HttpUriRequestBase.class))).thenAnswer(invocation -> {
+            HttpUriRequestBase request = invocation.getArgument(0);
+            String authorizationHeader = request.getFirstHeader("Authorization").getValue();
+            authorizationHeaders.add(authorizationHeader);
+
+            CloseableHttpResponse response;
+            if("Bearer rejected-token".equals(authorizationHeader)) {
+                rejectedRequestsStarted.countDown();
+                assertTrue(rejectedRequestsStarted.await(5, TimeUnit.SECONDS));
+                response = mockResponse(401, null);
+            } else if("Bearer refreshed-token".equals(authorizationHeader)) {
+                response = mockResponse(200, "[]");
+            } else {
+                throw new AssertionError("Unexpected authorization header: " + authorizationHeader);
+            }
+
+            responses.add(response);
+            return response;
+        });
+
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        try {
+            Future<List<Network>> firstRequest = executorService.submit(() -> connectorService.getNetworks(
+                    authorizationService,
+                    new HttpGet(TelQUrls.getNetworksUrl())
+            ));
+            Future<List<Network>> secondRequest = executorService.submit(() -> connectorService.getNetworks(
+                    authorizationService,
+                    new HttpGet(TelQUrls.getNetworksUrl())
+            ));
+
+            assertTrue(firstRequest.get(5, TimeUnit.SECONDS).isEmpty());
+            assertTrue(secondRequest.get(5, TimeUnit.SECONDS).isEmpty());
+        } finally {
+            executorService.shutdownNow();
+        }
+
+        assertEquals(1, refreshCount.get());
+        assertEquals(2, Collections.frequency(authorizationHeaders, "Bearer rejected-token"));
+        assertEquals(2, Collections.frequency(authorizationHeaders, "Bearer refreshed-token"));
+        assertEquals(4, responses.size());
+        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(mockClient, Mockito.times(4)).execute(Mockito.any(HttpUriRequestBase.class));
+        for(CloseableHttpResponse response : responses) {
+            Mockito.verify(response, Mockito.times(1)).close();
+        }
+    }
 
 
     @Test
@@ -304,12 +503,6 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         assertEquals(MockResponses.requestTestMnc, testsResponse.get(0).getDestinationNetwork().getMnc());
         assertEquals(MockResponses.requestTestPortedFromMnc, testsResponse.get(0).getDestinationNetwork().getPortedFromMnc());
     }
-
-//    @Test TODO
-//    @SneakyThrows
-//    public void sendTests_invalidToken_badRequestExpected() {
-//
-//    }
 
     @Test
     @SneakyThrows
@@ -554,6 +747,15 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         );
 
         return destinationNetworks;
+    }
+
+    private CloseableHttpResponse mockResponse(int statusCode, String content) throws Exception {
+        CloseableHttpResponse response = Mockito.mock(CloseableHttpResponse.class);
+        Mockito.when(response.getCode()).thenReturn(statusCode);
+        if(content != null) {
+            Mockito.when(response.getEntity()).thenReturn(EntityBuilder.create().setText(content).build());
+        }
+        return response;
     }
 
     private HttpPost formTestInitiationRequest(@NonNull List<DestinationNetwork> destinationNetworks,

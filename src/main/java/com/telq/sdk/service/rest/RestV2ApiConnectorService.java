@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class RestV2ApiConnectorService implements ApiConnectorService {
 
@@ -53,7 +54,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
         try (CloseableHttpResponse response = httpRequestWrapper(null, request, true)) {
 
             String content = extractResponseContent(response.getEntity());
-            response.close();
             TokenResponseDto tokenResponseDto = JsonMapper.getInstance().getMapper().fromJson(content, TokenResponseDto.class);
 
             return TokenBearer.builder().token(tokenResponseDto.getValue()).build();
@@ -72,7 +72,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             networks = JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Network[].class);
-            response.close();
 
             return Arrays.asList(networks);
         }
@@ -95,7 +94,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             testResponse = JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Test[].class);
-            response.close();
 
             return Arrays.asList(testResponse);
         }
@@ -115,7 +113,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
     public Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception {
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             String resultResponse = extractResponseContent(response.getEntity());
-            response.close();
             return JsonMapper.getInstance().getMapper().fromJson(resultResponse, Result.class);
         }
     }
@@ -125,22 +122,63 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
             HttpUriRequestBase request,
             boolean requestingToken) throws Exception {
 
+        TokenBearer tokenBearer = null;
+
         if(request instanceof HttpPost) {
             request.setHeader("Content-Type", "application/json");
         }
 
         if(!requestingToken) {
-            TokenBearer tokenBearer = authorizationService.checkAndGetToken();
-            request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
+            tokenBearer = authorizationService.checkAndGetToken();
+            setAuthorizationHeader(request, tokenBearer);
         }
 
         request.setHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
 
         CloseableHttpResponse response = httpClient.execute(request);
 
-        HttpCodeStatusChecker.statusCheck(response.getCode());
+        if(!requestingToken && response.getCode() == 401 && isRepeatable(request)) {
+            response.close();
+            tokenBearer = refreshRejectedToken(authorizationService, tokenBearer);
+            setAuthorizationHeader(request, tokenBearer);
+            response = httpClient.execute(request);
+        }
+
+        try {
+            HttpCodeStatusChecker.statusCheck(response.getCode());
+        } catch (Exception exception) {
+            try {
+                response.close();
+            } catch (IOException closeException) {
+                exception.addSuppressed(closeException);
+            }
+            throw exception;
+        }
 
         return response;
+    }
+
+    private boolean isRepeatable(HttpUriRequestBase request) {
+        return request.getEntity() == null || request.getEntity().isRepeatable();
+    }
+
+    private TokenBearer refreshRejectedToken(
+            AuthorizationService authorizationService,
+            TokenBearer rejectedToken) throws Exception {
+
+        synchronized (authorizationService) {
+            TokenBearer currentToken = authorizationService.checkAndGetToken();
+
+            if(Objects.equals(currentToken.getToken(), rejectedToken.getToken())) {
+                return authorizationService.requestToken();
+            }
+
+            return currentToken;
+        }
+    }
+
+    private void setAuthorizationHeader(HttpUriRequestBase request, TokenBearer tokenBearer) {
+        request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
     }
 
     public String extractResponseContent(HttpEntity httpEntity) throws Exception {

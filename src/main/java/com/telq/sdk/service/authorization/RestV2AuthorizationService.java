@@ -37,7 +37,7 @@ public class RestV2AuthorizationService implements AuthorizationService {
      * @return {@link TokenBearer} newly created Token
      */
     @Override
-    public TokenBearer requestToken() throws Exception {
+    public synchronized TokenBearer requestToken() throws Exception {
         if(!apiCredentials.initialised()) {
             throw new ApiCredentialsException("Api credentials are not correctly initialised, one of the fields is missing");
         }
@@ -65,19 +65,17 @@ public class RestV2AuthorizationService implements AuthorizationService {
      * @throws AuthorizationServiceException if the token is invalid
      */
     @Override
-    public TokenBearer checkAndGetToken() throws Exception {
+    public synchronized TokenBearer checkAndGetToken() throws Exception {
         if(tokenBearer != null) {
 
             if(lastTokenGet.isBefore(Instant.now().minus(24, ChronoUnit.HOURS))) {
                 System.out.println("Token more than a day old, trying to retrieve another token");
                 try {
-                    this.requestToken();
+                    return this.requestToken();
                 } catch (IOException | ApiCredentialsException e) {
                     e.printStackTrace();
                     throw new AuthorizationServiceException("Token invalid");
                 }
-
-                checkAndGetToken();
             }
 
             return tokenBearer;
