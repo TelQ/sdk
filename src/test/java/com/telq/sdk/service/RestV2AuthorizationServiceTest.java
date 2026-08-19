@@ -19,6 +19,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -240,14 +241,14 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
 
         assertNull(authorizationService.refreshRejectedToken(refreshedToken));
 
-        setLastRejectedRefresh(authorizationService, Instant.now().minus(4, ChronoUnit.MINUTES));
+        setLastRejectedRefresh(authorizationService, Instant.now().minus(610, ChronoUnit.SECONDS));
 
         assertEquals(laterToken, authorizationService.refreshRejectedToken(refreshedToken));
         verify(apiConnectorService, times(3)).getToken(any());
     }
 
     @Test
-    public void refreshRejectedToken_backoffHoldsForLessThanThreeMinutes() throws Exception {
+    public void refreshRejectedToken_backoffHoldsForLessThanTenMinutes() throws Exception {
         TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
         ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
         Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken);
@@ -259,7 +260,7 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
         TokenBearer rejectedToken = authorizationService.checkAndGetToken();
         authorizationService.refreshRejectedToken(rejectedToken);
         authorizationService.reportRefreshedTokenRejected();
-        setLastRejectedRefresh(authorizationService, Instant.now().minus(179, ChronoUnit.SECONDS));
+        setLastRejectedRefresh(authorizationService, Instant.now().minus(590, ChronoUnit.SECONDS));
 
         assertNull(authorizationService.refreshRejectedToken(refreshedToken));
         verify(apiConnectorService, times(2)).getToken(any());
@@ -326,6 +327,21 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
 
         assertEquals(2, tokenRequests.get());
         verify(apiConnectorService, times(2)).getToken(any());
+    }
+
+    @Test
+    public void backoffWindow_staysUnderTokenEndpointRateLimit() throws Exception {
+        Field backoffField = RestV2AuthorizationService.class.getDeclaredField("REJECTED_REFRESH_BACKOFF");
+        backoffField.setAccessible(true);
+        Duration backoff = (Duration) backoffField.get(null);
+
+        long refreshesPerHour = Duration.ofHours(1).toMillis() / backoff.toMillis();
+
+        assertTrue(
+                refreshesPerHour <= 10,
+                "the token endpoint allows 10 requests per hour per appId, but the backoff window permits "
+                        + refreshesPerHour
+        );
     }
 
     private void setLastRejectedRefresh(RestV2AuthorizationService authorizationService, Instant value) throws Exception {

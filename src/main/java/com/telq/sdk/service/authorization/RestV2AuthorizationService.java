@@ -22,7 +22,7 @@ import java.util.Objects;
  */
 public class RestV2AuthorizationService implements AuthorizationService {
 
-    private static final Duration REJECTED_REFRESH_BACKOFF = Duration.ofMinutes(3);
+    private static final Duration REJECTED_REFRESH_BACKOFF = Duration.ofMinutes(10);
 
     private final ApiCredentials apiCredentials;
     private final ApiConnectorService apiConnectorService;
@@ -92,7 +92,9 @@ public class RestV2AuthorizationService implements AuthorizationService {
 
     /**
      * A rejected token is only replaced once per backoff window. Without that window a server answering 401 to every
-     * request would make each caller pay for an extra token request and an extra retry indefinitely.
+     * request would make each caller pay for an extra token request and an extra retry indefinitely, and the token
+     * endpoint is rate limited to 10 requests per hour per appId. Exhausting that limit would leave the SDK unable to
+     * authenticate even once the server recovers, so the window has to keep the worst case comfortably below it.
      */
     @Override
     public synchronized TokenBearer refreshRejectedToken(TokenBearer rejectedToken) throws Exception {

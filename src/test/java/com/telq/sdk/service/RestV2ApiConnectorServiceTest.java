@@ -421,7 +421,7 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         Field lastRejectedRefreshField = RestV2AuthorizationService.class.getDeclaredField("lastRejectedRefresh");
         lastRejectedRefreshField.setAccessible(true);
-        lastRejectedRefreshField.set(sharedAuthorizationService, Instant.now().minus(4, ChronoUnit.MINUTES));
+        lastRejectedRefreshField.set(sharedAuthorizationService, Instant.now().minus(11, ChronoUnit.MINUTES));
 
         assertThrows(Unauthorized.class, () -> connectorService.getNetworks(
                 sharedAuthorizationService,
