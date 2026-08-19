@@ -6,6 +6,7 @@ import com.telq.sdk.exceptions.httpExceptions.clientSide.Unauthorized;
 import com.telq.sdk.exceptions.httpExceptions.serverSide.InternalServerError;
 import com.telq.sdk.model.MockResponses;
 import com.telq.sdk.model.TelQUrls;
+import com.telq.sdk.model.authorization.ApiCredentials;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.model.network.DestinationNetwork;
 import com.telq.sdk.model.network.Network;
@@ -13,6 +14,8 @@ import com.telq.sdk.model.tests.RequestTestDto;
 import com.telq.sdk.model.tests.Result;
 import com.telq.sdk.model.token.TokenRequestDto;
 import com.telq.sdk.service.authorization.AuthorizationService;
+import com.telq.sdk.service.authorization.RestV2AuthorizationService;
+import com.telq.sdk.service.rest.ApiConnectorService;
 import com.telq.sdk.service.rest.RestV2ApiConnectorService;
 import com.telq.sdk.utils.JsonMapper;
 import lombok.NonNull;
@@ -36,8 +39,10 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +53,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -250,8 +254,8 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         StringEntity requestEntity = new StringEntity("request-body");
         request.setEntity(requestEntity);
 
-        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken, rejectedToken);
-        Mockito.when(authorizationService.requestToken()).thenReturn(refreshedToken);
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken);
+        Mockito.when(authorizationService.refreshRejectedToken(rejectedToken)).thenReturn(refreshedToken);
         Mockito.when(mockClient.execute(Mockito.any(HttpUriRequestBase.class))).thenAnswer(invocation -> {
             HttpUriRequestBase executedRequest = invocation.getArgument(0);
             authorizationHeaders.add(executedRequest.getFirstHeader("Authorization").getValue());
@@ -266,7 +270,8 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         assertEquals(2, executions.get());
         assertEquals("Bearer rejected-token", authorizationHeaders.get(0));
         assertEquals("Bearer refreshed-token", authorizationHeaders.get(1));
-        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(authorizationService, Mockito.times(1)).refreshRejectedToken(rejectedToken);
+        Mockito.verify(authorizationService, Mockito.never()).reportRefreshedTokenRejected();
         Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
         Mockito.verify(successfulResponse, Mockito.times(1)).close();
     }
@@ -279,15 +284,16 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         CloseableHttpResponse secondUnauthorizedResponse = mockResponse(401, null);
         HttpGet request = new HttpGet(TelQUrls.getNetworksUrl());
 
-        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken, rejectedToken);
-        Mockito.when(authorizationService.requestToken()).thenReturn(refreshedToken);
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken);
+        Mockito.when(authorizationService.refreshRejectedToken(rejectedToken)).thenReturn(refreshedToken);
         Mockito.when(mockClient.execute(request)).thenReturn(firstUnauthorizedResponse, secondUnauthorizedResponse);
 
         assertThrows(Unauthorized.class, () -> connectorService.getNetworks(authorizationService, request));
 
         assertEquals("Bearer refreshed-token", request.getFirstHeader("Authorization").getValue());
         Mockito.verify(mockClient, Mockito.times(2)).execute(request);
-        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(authorizationService, Mockito.times(1)).refreshRejectedToken(rejectedToken);
+        Mockito.verify(authorizationService, Mockito.times(1)).reportRefreshedTokenRejected();
         Mockito.verify(firstUnauthorizedResponse, Mockito.times(1)).close();
         Mockito.verify(secondUnauthorizedResponse, Mockito.times(1)).close();
     }
@@ -298,8 +304,9 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         CloseableHttpResponse unauthorizedResponse = mockResponse(401, null);
         HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
 
-        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken, rejectedToken);
-        Mockito.when(authorizationService.requestToken()).thenThrow(new IllegalStateException("refresh failed"));
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken);
+        Mockito.when(authorizationService.refreshRejectedToken(rejectedToken))
+                .thenThrow(new IllegalStateException("refresh failed"));
         Mockito.when(mockClient.execute(request)).thenReturn(unauthorizedResponse);
 
         IllegalStateException exception = assertThrows(
@@ -309,7 +316,7 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         assertEquals("refresh failed", exception.getMessage());
         Mockito.verify(mockClient, Mockito.times(1)).execute(request);
-        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(authorizationService, Mockito.times(1)).refreshRejectedToken(rejectedToken);
         Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
     }
 
@@ -332,7 +339,7 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         assertFalse(request.getEntity().isRepeatable());
         Mockito.verify(mockClient, Mockito.times(1)).execute(request);
-        Mockito.verify(authorizationService, Mockito.never()).requestToken();
+        Mockito.verify(authorizationService, Mockito.never()).refreshRejectedToken(Mockito.any());
         Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
     }
 
@@ -359,26 +366,92 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
 
         Mockito.verify(mockClient, Mockito.times(1)).execute(request);
         Mockito.verify(authorizationService, Mockito.times(1)).checkAndGetToken();
-        Mockito.verify(authorizationService, Mockito.never()).requestToken();
+        Mockito.verify(authorizationService, Mockito.never()).refreshRejectedToken(Mockito.any());
         Mockito.verify(badRequestResponse, Mockito.times(1)).close();
     }
 
     @Test
-    public void concurrentUnauthorizedResponsesShareOneTokenRefresh() throws Exception {
+    public void sendTests_refreshHeldBackByBackoffFailsFastWithoutRetry() throws Exception {
         TokenBearer rejectedToken = TokenBearer.builder().token("rejected-token").build();
-        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
-        AtomicReference<TokenBearer> currentToken = new AtomicReference<>(rejectedToken);
-        AtomicInteger refreshCount = new AtomicInteger();
+        CloseableHttpResponse unauthorizedResponse = mockResponse(401, null);
+        HttpPost request = new HttpPost(TelQUrls.getTestsUrl());
+        request.setEntity(new StringEntity("request-body"));
+
+        Mockito.when(authorizationService.checkAndGetToken()).thenReturn(rejectedToken);
+        Mockito.when(authorizationService.refreshRejectedToken(rejectedToken)).thenReturn(null);
+        Mockito.when(mockClient.execute(request)).thenReturn(unauthorizedResponse);
+
+        assertThrows(Unauthorized.class, () -> connectorService.sendTests(authorizationService, request));
+
+        assertEquals("Bearer rejected-token", request.getFirstHeader("Authorization").getValue());
+        Mockito.verify(mockClient, Mockito.times(1)).execute(request);
+        Mockito.verify(authorizationService, Mockito.times(1)).refreshRejectedToken(rejectedToken);
+        Mockito.verify(authorizationService, Mockito.never()).reportRefreshedTokenRejected();
+        Mockito.verify(unauthorizedResponse, Mockito.times(1)).close();
+    }
+
+    @Test
+    public void repeatedlyUnauthorizedBackendRefreshesTokenOncePerBackoffWindow() throws Exception {
+        ApiConnectorService tokenConnectorService = Mockito.mock(ApiConnectorService.class);
+        RestV2AuthorizationService sharedAuthorizationService = new RestV2AuthorizationService(
+                ApiCredentials.builder().appId(appId).appKey(appKey).build(),
+                tokenConnectorService
+        );
+        AtomicInteger tokenRequests = new AtomicInteger();
+        List<CloseableHttpResponse> responses = new ArrayList<>();
+
+        Mockito.when(tokenConnectorService.getToken(Mockito.any())).thenAnswer(invocation ->
+                TokenBearer.builder().token("token-" + tokenRequests.incrementAndGet()).build()
+        );
+        Mockito.when(mockClient.execute(Mockito.any(HttpUriRequestBase.class))).thenAnswer(invocation -> {
+            CloseableHttpResponse response = mockResponse(401, null);
+            responses.add(response);
+            return response;
+        });
+
+        for(int call = 0; call < 3; call++) {
+            assertThrows(Unauthorized.class, () -> connectorService.getNetworks(
+                    sharedAuthorizationService,
+                    new HttpGet(TelQUrls.getNetworksUrl())
+            ));
+        }
+
+        assertEquals(2, tokenRequests.get());
+        assertEquals(4, responses.size());
+
+        Field lastRejectedRefreshField = RestV2AuthorizationService.class.getDeclaredField("lastRejectedRefresh");
+        lastRejectedRefreshField.setAccessible(true);
+        lastRejectedRefreshField.set(sharedAuthorizationService, Instant.now().minus(4, ChronoUnit.MINUTES));
+
+        assertThrows(Unauthorized.class, () -> connectorService.getNetworks(
+                sharedAuthorizationService,
+                new HttpGet(TelQUrls.getNetworksUrl())
+        ));
+
+        assertEquals(3, tokenRequests.get());
+        assertEquals(6, responses.size());
+        for(CloseableHttpResponse response : responses) {
+            Mockito.verify(response, Mockito.times(1)).close();
+        }
+    }
+
+    @Test
+    public void concurrentUnauthorizedResponsesShareOneTokenRefresh() throws Exception {
+        ApiConnectorService tokenConnectorService = Mockito.mock(ApiConnectorService.class);
+        RestV2AuthorizationService sharedAuthorizationService = new RestV2AuthorizationService(
+                ApiCredentials.builder().appId(appId).appKey(appKey).build(),
+                tokenConnectorService
+        );
+        AtomicInteger tokenRequests = new AtomicInteger();
         CountDownLatch rejectedRequestsStarted = new CountDownLatch(2);
         List<CloseableHttpResponse> responses = Collections.synchronizedList(new ArrayList<>());
         List<String> authorizationHeaders = new CopyOnWriteArrayList<>();
 
-        Mockito.when(authorizationService.checkAndGetToken()).thenAnswer(invocation -> currentToken.get());
-        Mockito.when(authorizationService.requestToken()).thenAnswer(invocation -> {
-            refreshCount.incrementAndGet();
-            currentToken.set(refreshedToken);
-            return refreshedToken;
-        });
+        Mockito.when(tokenConnectorService.getToken(Mockito.any())).thenAnswer(invocation ->
+                tokenRequests.incrementAndGet() == 1
+                        ? TokenBearer.builder().token("rejected-token").build()
+                        : TokenBearer.builder().token("refreshed-token").build()
+        );
         Mockito.when(mockClient.execute(Mockito.any(HttpUriRequestBase.class))).thenAnswer(invocation -> {
             HttpUriRequestBase request = invocation.getArgument(0);
             String authorizationHeader = request.getFirstHeader("Authorization").getValue();
@@ -402,11 +475,11 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         try {
             Future<List<Network>> firstRequest = executorService.submit(() -> connectorService.getNetworks(
-                    authorizationService,
+                    sharedAuthorizationService,
                     new HttpGet(TelQUrls.getNetworksUrl())
             ));
             Future<List<Network>> secondRequest = executorService.submit(() -> connectorService.getNetworks(
-                    authorizationService,
+                    sharedAuthorizationService,
                     new HttpGet(TelQUrls.getNetworksUrl())
             ));
 
@@ -416,11 +489,11 @@ public class RestV2ApiConnectorServiceTest extends BaseTest {
             executorService.shutdownNow();
         }
 
-        assertEquals(1, refreshCount.get());
+        assertEquals(2, tokenRequests.get());
         assertEquals(2, Collections.frequency(authorizationHeaders, "Bearer rejected-token"));
         assertEquals(2, Collections.frequency(authorizationHeaders, "Bearer refreshed-token"));
         assertEquals(4, responses.size());
-        Mockito.verify(authorizationService, Mockito.times(1)).requestToken();
+        Mockito.verify(tokenConnectorService, Mockito.times(2)).getToken(Mockito.any());
         Mockito.verify(mockClient, Mockito.times(4)).execute(Mockito.any(HttpUriRequestBase.class));
         for(CloseableHttpResponse response : responses) {
             Mockito.verify(response, Mockito.times(1)).close();

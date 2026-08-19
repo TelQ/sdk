@@ -12,13 +12,17 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 /**
  * Here we will do all the operations required to handle authorization
  */
 public class RestV2AuthorizationService implements AuthorizationService {
+
+    private static final Duration REJECTED_REFRESH_BACKOFF = Duration.ofMinutes(3);
 
     private final ApiCredentials apiCredentials;
     private final ApiConnectorService apiConnectorService;
@@ -26,6 +30,8 @@ public class RestV2AuthorizationService implements AuthorizationService {
     private TokenBearer tokenBearer;
 
     private Instant lastTokenGet;
+
+    private Instant lastRejectedRefresh;
 
     public RestV2AuthorizationService(ApiCredentials apiCredentials, ApiConnectorService apiConnectorService) {
         this.apiCredentials = apiCredentials;
@@ -54,6 +60,7 @@ public class RestV2AuthorizationService implements AuthorizationService {
 
         this.lastTokenGet = Instant.now();
         this.tokenBearer = tokenBearer;
+        this.lastRejectedRefresh = null;
 
         return tokenBearer;
     }
@@ -81,6 +88,35 @@ public class RestV2AuthorizationService implements AuthorizationService {
             return tokenBearer;
         } else
             return this.requestToken();
+    }
+
+    /**
+     * A rejected token is only replaced once per backoff window. Without that window a server answering 401 to every
+     * request would make each caller pay for an extra token request and an extra retry indefinitely.
+     */
+    @Override
+    public synchronized TokenBearer refreshRejectedToken(TokenBearer rejectedToken) throws Exception {
+        TokenBearer currentToken = checkAndGetToken();
+
+        if(rejectedToken == null || !Objects.equals(currentToken.getToken(), rejectedToken.getToken())) {
+            return currentToken;
+        }
+
+        if(refreshBackoffActive()) {
+            return null;
+        }
+
+        return requestToken();
+    }
+
+    @Override
+    public synchronized void reportRefreshedTokenRejected() {
+        this.lastRejectedRefresh = Instant.now();
+    }
+
+    private boolean refreshBackoffActive() {
+        return lastRejectedRefresh != null
+                && lastRejectedRefresh.isAfter(Instant.now().minus(REJECTED_REFRESH_BACKOFF));
     }
 
 }

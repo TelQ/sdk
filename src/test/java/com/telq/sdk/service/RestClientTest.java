@@ -1,5 +1,6 @@
 package com.telq.sdk.service;
 
+import com.telq.sdk.exceptions.httpExceptions.clientSide.Unauthorized;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.service.rest.RestClient;
@@ -82,12 +83,41 @@ class RestClientTest {
 
     @Test
     void testExecuteWithTokenRetry_retriesOnUnauthorized() throws Exception {
+        TokenBearer refreshedTokenBearer = new TokenBearer("refreshedToken");
+        when(mockAuthorizationService.refreshRejectedToken(mockTokenBearer)).thenReturn(refreshedTokenBearer);
         when(mockResponse.getCode()).thenReturn(401).thenReturn(200);
 
         restClient.httpDelete("http://example.com");
 
-        verify(mockAuthorizationService, times(1)).requestToken();
+        verify(mockAuthorizationService, times(1)).refreshRejectedToken(mockTokenBearer);
+        verify(mockAuthorizationService, never()).reportRefreshedTokenRejected();
         verify(mockHttpClient, times(2)).execute(any(HttpUriRequestBase.class));
+    }
+
+    @Test
+    void testExecuteWithTokenRetry_secondUnauthorizedReportsRejectedRefresh() throws Exception {
+        TokenBearer refreshedTokenBearer = new TokenBearer("refreshedToken");
+        when(mockAuthorizationService.refreshRejectedToken(mockTokenBearer)).thenReturn(refreshedTokenBearer);
+        when(mockResponse.getCode()).thenReturn(401);
+
+        assertThrows(RuntimeException.class, () -> restClient.httpDelete("http://example.com"));
+
+        verify(mockAuthorizationService, times(1)).refreshRejectedToken(mockTokenBearer);
+        verify(mockAuthorizationService, times(1)).reportRefreshedTokenRejected();
+        verify(mockHttpClient, times(2)).execute(any(HttpUriRequestBase.class));
+    }
+
+    @Test
+    void testExecuteWithTokenRetry_refreshHeldBackByBackoffFailsFast() throws Exception {
+        when(mockAuthorizationService.refreshRejectedToken(mockTokenBearer)).thenReturn(null);
+        when(mockResponse.getCode()).thenReturn(401);
+
+        assertThrows(Unauthorized.class, () -> restClient.httpDelete("http://example.com"));
+
+        verify(mockAuthorizationService, times(1)).refreshRejectedToken(mockTokenBearer);
+        verify(mockAuthorizationService, never()).reportRefreshedTokenRejected();
+        verify(mockHttpClient, times(1)).execute(any(HttpUriRequestBase.class));
+        verify(mockResponse, times(1)).close();
     }
 
     @Getter

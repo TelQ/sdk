@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -166,6 +167,177 @@ public class RestV2AuthorizationServiceTest extends BaseTest {
 
         assertEquals(1, tokenRequests.get());
         verify(apiConnectorService, times(1)).getToken(any());
+    }
+
+    @Test
+    public void refreshRejectedToken_stillCurrentToken_requestsNewToken() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+
+        assertEquals(this.tokenBearer, rejectedToken);
+        assertEquals(refreshedToken, authorizationService.refreshRejectedToken(rejectedToken));
+        verify(apiConnectorService, times(2)).getToken(any());
+    }
+
+    @Test
+    public void refreshRejectedToken_alreadyRefreshedByAnotherCaller_reusesCurrentToken() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+        authorizationService.requestToken();
+
+        assertEquals(refreshedToken, authorizationService.refreshRejectedToken(rejectedToken));
+        verify(apiConnectorService, times(2)).getToken(any());
+    }
+
+    @Test
+    public void refreshRejectedToken_rejectedRefreshWithinBackoff_returnsNull() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+        TokenBearer firstRefresh = authorizationService.refreshRejectedToken(rejectedToken);
+        authorizationService.reportRefreshedTokenRejected();
+
+        assertEquals(refreshedToken, firstRefresh);
+        assertNull(authorizationService.refreshRejectedToken(refreshedToken));
+        assertNull(authorizationService.refreshRejectedToken(refreshedToken));
+        verify(apiConnectorService, times(2)).getToken(any());
+    }
+
+    @Test
+    public void refreshRejectedToken_backoffElapsed_refreshesAgain() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        TokenBearer laterToken = TokenBearer.builder().token("later-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken, laterToken);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+        authorizationService.refreshRejectedToken(rejectedToken);
+        authorizationService.reportRefreshedTokenRejected();
+
+        assertNull(authorizationService.refreshRejectedToken(refreshedToken));
+
+        setLastRejectedRefresh(authorizationService, Instant.now().minus(4, ChronoUnit.MINUTES));
+
+        assertEquals(laterToken, authorizationService.refreshRejectedToken(refreshedToken));
+        verify(apiConnectorService, times(3)).getToken(any());
+    }
+
+    @Test
+    public void refreshRejectedToken_backoffHoldsForLessThanThreeMinutes() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+        authorizationService.refreshRejectedToken(rejectedToken);
+        authorizationService.reportRefreshedTokenRejected();
+        setLastRejectedRefresh(authorizationService, Instant.now().minus(179, ChronoUnit.SECONDS));
+
+        assertNull(authorizationService.refreshRejectedToken(refreshedToken));
+        verify(apiConnectorService, times(2)).getToken(any());
+    }
+
+    @Test
+    public void requestToken_successfulRefresh_clearsBackoff() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        TokenBearer laterToken = TokenBearer.builder().token("later-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        Mockito.when(apiConnectorService.getToken(any())).thenReturn(tokenBearer, refreshedToken, laterToken);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+        authorizationService.refreshRejectedToken(rejectedToken);
+        authorizationService.reportRefreshedTokenRejected();
+        authorizationService.requestToken();
+
+        assertEquals(laterToken, authorizationService.checkAndGetToken());
+        assertNull(getLastRejectedRefresh(authorizationService));
+    }
+
+    @Test
+    public void refreshRejectedToken_concurrentCallersRequestOneToken() throws Exception {
+        TokenBearer refreshedToken = TokenBearer.builder().token("refreshed-token").build();
+        ApiConnectorService apiConnectorService = mock(ApiConnectorService.class);
+        RestV2AuthorizationService authorizationService = new RestV2AuthorizationService(
+                correctApiCredentials,
+                apiConnectorService
+        );
+        AtomicInteger tokenRequests = new AtomicInteger();
+        CountDownLatch callersReady = new CountDownLatch(8);
+        CountDownLatch start = new CountDownLatch(1);
+
+        Mockito.when(apiConnectorService.getToken(any())).thenAnswer(invocation ->
+                tokenRequests.incrementAndGet() == 1 ? tokenBearer : refreshedToken
+        );
+
+        TokenBearer rejectedToken = authorizationService.checkAndGetToken();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(8);
+        List<Future<TokenBearer>> futures = new ArrayList<>();
+        try {
+            for(int i = 0; i < 8; i++) {
+                futures.add(executorService.submit(() -> {
+                    callersReady.countDown();
+                    assertTrue(start.await(5, TimeUnit.SECONDS));
+                    return authorizationService.refreshRejectedToken(rejectedToken);
+                }));
+            }
+
+            assertTrue(callersReady.await(5, TimeUnit.SECONDS));
+            start.countDown();
+
+            for(Future<TokenBearer> future : futures) {
+                assertEquals(refreshedToken, future.get(5, TimeUnit.SECONDS));
+            }
+        } finally {
+            executorService.shutdownNow();
+        }
+
+        assertEquals(2, tokenRequests.get());
+        verify(apiConnectorService, times(2)).getToken(any());
+    }
+
+    private void setLastRejectedRefresh(RestV2AuthorizationService authorizationService, Instant value) throws Exception {
+        Field lastRejectedRefreshField = RestV2AuthorizationService.class.getDeclaredField("lastRejectedRefresh");
+        lastRejectedRefreshField.setAccessible(true);
+        lastRejectedRefreshField.set(authorizationService, value);
+    }
+
+    private Instant getLastRejectedRefresh(RestV2AuthorizationService authorizationService) throws Exception {
+        Field lastRejectedRefreshField = RestV2AuthorizationService.class.getDeclaredField("lastRejectedRefresh");
+        lastRejectedRefreshField.setAccessible(true);
+        return (Instant) lastRejectedRefreshField.get(authorizationService);
     }
 
 }

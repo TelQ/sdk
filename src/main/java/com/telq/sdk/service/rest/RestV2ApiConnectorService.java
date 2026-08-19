@@ -3,6 +3,7 @@ package com.telq.sdk.service.rest;
 import com.google.gson.Gson;
 import com.telq.sdk.exceptions.httpExceptions.clientSide.ApiCredentialsException;
 import com.telq.sdk.exceptions.httpExceptions.clientSide.AuthorizationServiceException;
+import com.telq.sdk.exceptions.httpExceptions.clientSide.Unauthorized;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.model.network.DestinationNetwork;
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class RestV2ApiConnectorService implements ApiConnectorService {
 
@@ -139,9 +139,18 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         if(!requestingToken && response.getCode() == 401 && isRepeatable(request)) {
             response.close();
-            tokenBearer = refreshRejectedToken(authorizationService, tokenBearer);
-            setAuthorizationHeader(request, tokenBearer);
+            TokenBearer refreshedToken = authorizationService.refreshRejectedToken(tokenBearer);
+
+            if(refreshedToken == null) {
+                throw new Unauthorized();
+            }
+
+            setAuthorizationHeader(request, refreshedToken);
             response = httpClient.execute(request);
+
+            if(response.getCode() == 401) {
+                authorizationService.reportRefreshedTokenRejected();
+            }
         }
 
         try {
@@ -160,21 +169,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
     private boolean isRepeatable(HttpUriRequestBase request) {
         return request.getEntity() == null || request.getEntity().isRepeatable();
-    }
-
-    private TokenBearer refreshRejectedToken(
-            AuthorizationService authorizationService,
-            TokenBearer rejectedToken) throws Exception {
-
-        synchronized (authorizationService) {
-            TokenBearer currentToken = authorizationService.checkAndGetToken();
-
-            if(Objects.equals(currentToken.getToken(), rejectedToken.getToken())) {
-                return authorizationService.requestToken();
-            }
-
-            return currentToken;
-        }
     }
 
     private void setAuthorizationHeader(HttpUriRequestBase request, TokenBearer tokenBearer) {
