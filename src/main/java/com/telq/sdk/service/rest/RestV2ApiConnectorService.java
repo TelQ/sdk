@@ -3,6 +3,7 @@ package com.telq.sdk.service.rest;
 import com.google.gson.Gson;
 import com.telq.sdk.exceptions.httpExceptions.clientSide.ApiCredentialsException;
 import com.telq.sdk.exceptions.httpExceptions.clientSide.AuthorizationServiceException;
+import com.telq.sdk.exceptions.httpExceptions.clientSide.Unauthorized;
 import com.telq.sdk.model.TelQUrls;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.model.network.DestinationNetwork;
@@ -53,7 +54,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
         try (CloseableHttpResponse response = httpRequestWrapper(null, request, true)) {
 
             String content = extractResponseContent(response.getEntity());
-            response.close();
             TokenResponseDto tokenResponseDto = JsonMapper.getInstance().getMapper().fromJson(content, TokenResponseDto.class);
 
             return TokenBearer.builder().token(tokenResponseDto.getValue()).build();
@@ -72,7 +72,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             networks = JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Network[].class);
-            response.close();
 
             return Arrays.asList(networks);
         }
@@ -95,7 +94,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
 
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             testResponse = JsonMapper.getInstance().getMapper().fromJson(extractResponseContent(response.getEntity()), Test[].class);
-            response.close();
 
             return Arrays.asList(testResponse);
         }
@@ -115,7 +113,6 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
     public Result getTestResult(@NonNull AuthorizationService authorizationService, @NonNull HttpUriRequestBase request) throws Exception {
         try (CloseableHttpResponse response = httpRequestWrapper(authorizationService, request, false)) {
             String resultResponse = extractResponseContent(response.getEntity());
-            response.close();
             return JsonMapper.getInstance().getMapper().fromJson(resultResponse, Result.class);
         }
     }
@@ -125,22 +122,57 @@ public class RestV2ApiConnectorService implements ApiConnectorService {
             HttpUriRequestBase request,
             boolean requestingToken) throws Exception {
 
+        TokenBearer tokenBearer = null;
+
         if(request instanceof HttpPost) {
             request.setHeader("Content-Type", "application/json");
         }
 
         if(!requestingToken) {
-            TokenBearer tokenBearer = authorizationService.checkAndGetToken();
-            request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
+            tokenBearer = authorizationService.checkAndGetToken();
+            setAuthorizationHeader(request, tokenBearer);
         }
 
         request.setHeader("User-Agent", "java-sdk/" + VersionReader.getVersion());
 
         CloseableHttpResponse response = httpClient.execute(request);
 
-        HttpCodeStatusChecker.statusCheck(response.getCode());
+        if(!requestingToken && response.getCode() == 401 && isRepeatable(request)) {
+            response.close();
+            TokenBearer refreshedToken = authorizationService.refreshRejectedToken(tokenBearer);
+
+            if(refreshedToken == null) {
+                throw new Unauthorized();
+            }
+
+            setAuthorizationHeader(request, refreshedToken);
+            response = httpClient.execute(request);
+
+            if(response.getCode() == 401) {
+                authorizationService.reportRefreshedTokenRejected();
+            }
+        }
+
+        try {
+            HttpCodeStatusChecker.statusCheck(response.getCode());
+        } catch (Exception exception) {
+            try {
+                response.close();
+            } catch (IOException closeException) {
+                exception.addSuppressed(closeException);
+            }
+            throw exception;
+        }
 
         return response;
+    }
+
+    private boolean isRepeatable(HttpUriRequestBase request) {
+        return request.getEntity() == null || request.getEntity().isRepeatable();
+    }
+
+    private void setAuthorizationHeader(HttpUriRequestBase request, TokenBearer tokenBearer) {
+        request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
     }
 
     public String extractResponseContent(HttpEntity httpEntity) throws Exception {

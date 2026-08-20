@@ -1,6 +1,7 @@
 package com.telq.sdk.service.rest;
 
 import com.google.gson.Gson;
+import com.telq.sdk.exceptions.httpExceptions.clientSide.Unauthorized;
 import com.telq.sdk.model.authorization.TokenBearer;
 import com.telq.sdk.service.authorization.AuthorizationService;
 import com.telq.sdk.utils.JsonMapper;
@@ -74,22 +75,32 @@ public class RestClient {
         return new StringEntity(json, ContentType.create("text/plain", "UTF-8"));
     }
 
-    @SneakyThrows
-    private void useToken(HttpUriRequestBase request, Boolean forceReset) {
-        if (forceReset) authorizationService.requestToken();
-        TokenBearer tokenBearer = authorizationService.checkAndGetToken();
+    private void setAuthorizationHeader(HttpUriRequestBase request, TokenBearer tokenBearer) {
         request.setHeader("Authorization", "Bearer " + tokenBearer.getToken());
     }
 
     @SneakyThrows
     private CloseableHttpResponse executeWithTokenRetry(HttpUriRequestBase request) {
-        useToken(request, false);
+        TokenBearer tokenBearer = authorizationService.checkAndGetToken();
+        setAuthorizationHeader(request, tokenBearer);
         CloseableHttpResponse response = httpClient.execute(request);
+
         if (response.getCode() == 401) {
             response.close();
-            useToken(request, true);
+            TokenBearer refreshedToken = authorizationService.refreshRejectedToken(tokenBearer);
+
+            if (refreshedToken == null) {
+                throw new Unauthorized();
+            }
+
+            setAuthorizationHeader(request, refreshedToken);
             response = httpClient.execute(request);
+
+            if (response.getCode() == 401) {
+                authorizationService.reportRefreshedTokenRejected();
+            }
         }
+
         return response;
     }
 
